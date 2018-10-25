@@ -1,0 +1,788 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage{color}
+\usepackage[linktoc=all]{hyperref}
+
+\usepackage[bindingoffset=0.2in,left=1in,right=1in,top=0.5in,bottom=1in,footskip=.25in]{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{mwe}
+\usepackage{parskip}
+\usepackage{indentfirst}
+\usepackage{textcomp}
+\usepackage[formats]{listings}
+\usepackage{xcolor}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\definecolor{Darkgreen}{RGB}{11,100,35}
+
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,    
+	%   rulecolor=,
+	language=[GNU]C++,
+	basicstyle=\scriptsize,
+	upquote=true,
+	aboveskip={1.5\baselineskip},
+	columns=fixed,
+	showstringspaces=false,
+	extendedchars=false,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	frame=single,
+	numbers=left,
+	showtabs=false,
+	showspaces=false,
+	showstringspaces=false,
+	identifierstyle=\ttfamily,
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color[rgb]{0.026,0.112,0.095},
+	stringstyle=\color[rgb]{0.627,0.126,0.941},
+	numberstyle=\color[rgb]{0.205, 0.142, 0.73},
+	%        \lstdefinestyle{C++}{language=C++,style=numbers}’.
+}
+
+
+
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,
+	language=C++,
+	captionpos=b,
+	tabsize=3,
+	frame=lines,
+	numbers=left,
+	numberstyle=\tiny,
+	numbersep=5pt,
+	breaklines=true,
+	showstringspaces=false,
+	basicstyle=\footnotesize,
+	%  identifierstyle=\color{magenta},
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color{Darkgreen},
+	stringstyle=\color{red}
+}
+
+
+
+\setlength{\parindent}{15pt}
+%opening
+\title{Program 1 Report}
+\author{Yangxiao Wang}
+\date{ }
+
+
+
+\begin{document}
+	
+	\maketitle
+	
+	\tableofcontents
+	\pagebreak
+	
+	\section{Documentation}
+	In this project, we tried to solve Traveling salesman problem (TSP) with genetic algorithm. We are required to implement the core part of the algorithm: evaluation, crossover and mutation. Tsp problem often takes large amount of data and time. And to improve the efficiency, our approach is using OpenMP. My initial attempt is implement a greedy parallelization: parallelize the whole program from \textit{evaluate()} to \textit{populate()} with: \begin{lstlisting}
+	#pragma omp parallel for
+	\end{lstlisting}
+	however, after trying different things with the program, I realized that populate and mutate does not need to be parallelized. The time spent did increase not have much difference. And \textit{select()} with parallelization could spend more time than when running multi-thread. Therefore, the only functions I need to parallelize are \textit{crossover()} and \textit{evaluate()} which contain much larger loops. I simply added \begin{small}
+	\#pragma omp parallel for
+	\end{small} before the outer for loop inside \textit{crossover()} and \textit{evaluate()}. \par
+	
+	
+	
+	\section {Source code}
+	\subsection{EvalXOverMutate.cpp}
+	\begin{lstlisting}
+	//
+	// Created by yangxiao on 10/8/2018.
+	//
+	#include <iostream>  // cout
+	#include <fstream>   // ifstream
+	#include <string.h>  // strncpy
+	#include <stdlib.h>  // rand
+	#include <math.h>    // sqrt, pow
+	#include <time.h>
+	#include <omp.h>
+	#include <bits/stdc++.h>
+	#include "Trip.h"
+	
+	using namespace std;
+	
+	
+	float getDis(char a, char b, int coordinates[CITIES][2]);
+	
+	float getDisFromIt(char str[CITIES], float disMax[CITIES][CITIES + 1]);
+	
+	char *getChildB(char childA[CITIES]);
+	
+	int getIndex(char a, char source[CITIES]);
+	
+	int getAscii(char source);
+	
+	const char cit[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	
+	/**
+	* Compare tow trip based their fitness, uses as comparator for sorting
+	* @param t1 trip 1
+	* @param t2 trip 2
+	* @return if t1 < t2
+	*/
+	bool compareTrip(Trip t1, Trip t2) {
+	return (t1.fitness < t2.fitness);
+	}
+	
+	/**
+	* evaluates the distance of each trip and sorts out all the trips 
+	* in the shortest-first order
+	* @param trip trips to evaluates
+	* @param coordinates coordinates of all cities
+	*/
+	void evaluate(Trip trip[CHROMOSOMES], int coordinates[CITIES][2]) {
+	
+	//Parallelization
+	#pragma omp parallel for
+	for (int i = 0; i < CHROMOSOMES; ++i) {
+	char temp[CITIES];
+	strncpy(temp, trip[i].itinerary, CITIES);
+	int indexIn = (temp[0] >= 'A') ? temp[0] - 'A' : temp[0] - '0' + 26;
+	double dis = hypot(coordinates[indexIn][0], coordinates[indexIn][1]);
+	for (int j = 1; j < CITIES; ++j) {
+	int index = (temp[j] >= 'A') ? temp[j] - 'A' : temp[j] - '0' + 26;
+	dis += hypot((coordinates[indexIn][0] - coordinates[index][0]),
+	(coordinates[indexIn][1] - coordinates[index][1]));
+	indexIn = index;
+	}
+	trip[i].fitness = (float) dis;
+	}
+	sort(trip, trip + CHROMOSOMES, compareTrip);
+	}
+	
+	/**
+	* generates 25,000 off-springs from the parents, calculate distance
+	* based on their coordinates
+	* @param parents
+	* @param offsprings
+	* @param coordinates
+	*/
+	void crossover(Trip parents[TOP_X], Trip offsprings[TOP_X],
+	int coordinates[CITIES][2]) {
+	#pragma omp parallel for
+	for (int i = 0; i < TOP_X; i += 2) {
+	int selected[100] = {0};
+	char child1[CITIES + 1];
+	char child2[CITIES + 1];
+	char *parent1 = parents[i].itinerary;
+	char *parent2 = parents[i + 1].itinerary;
+	child1[0] = parent1[0];
+	selected[child1[0]] = 1;
+	
+	for (int j = 0; j < (CITIES - 1); j++) {
+	int indexInA = getIndex(child1[j], parent1) + 1;
+	int indexInB = getIndex(child1[j], parent2) + 1;
+	
+	if (indexInA == -1 || indexInB == -1) {
+	printf("WHat?\n");
+	}
+	
+	if (indexInA >= CITIES) {
+	indexInA = 0;
+	}
+	if (indexInB >= CITIES) {
+	indexInB = 0;
+	}
+	
+	float disA = INT_MAX;
+	float disB = INT_MAX;
+	
+	if (selected[parent1[indexInA]] == 0) {
+	disA = getDis(child1[j], parent1[indexInA], coordinates);
+	}
+	if (selected[parent2[indexInB]] == 0) {
+	disB = getDis(child1[j], parent2[indexInB], coordinates);
+	}
+	
+	if (disA == INT_MAX && disB == INT_MAX) {
+	int r = rand() % CITIES;
+	int found = 1;
+	while (found) {
+	if (selected[parent1[r]] != 1) {
+	found = 0;
+	child1[j + 1] = parent1[r];
+	}
+	r = ((r + 1) >= CITIES) ? 0 : (r + 1);
+	}
+	} else {
+	child1[j + 1] = (disA <= disB) ? 
+	parent1[indexInA] : parent2[indexInB];
+	}
+	
+	selected[child1[j + 1]] = 1;
+	}
+	
+	
+	strcpy(child2, getChildB(child1));
+	strncpy(offsprings[i].itinerary, child1, CITIES);
+	strncpy(offsprings[i + 1].itinerary, child2, CITIES);
+	}
+	}
+	
+	
+	/**
+	* Improved version, when mutate each city, 
+	* perform mutation if the new one has shorter distance,
+	* otherwise, do nothing
+	*
+	* randomly chooses two distinct cities (or genes) 
+	* in each trip (or chromosome) with a
+	* given probability, and swaps them
+	* @param offsprings
+	* @param disMax
+	*/
+	void mutateB(Trip offsprings[TOP_X], float disMax[CITIES][CITIES + 1]) {
+	for (int i = 0; i < TOP_X; ++i) {
+	int rate = rand() % 100;
+	if (rate < MUTATE_RATE) {
+	int r1 = rand() % CITIES;
+	int r2 = rand() % CITIES;
+	char temp[CITIES + 1];
+	strncpy(temp, offsprings[i].itinerary, CITIES);
+	temp[r1] = offsprings[i].itinerary[r2];
+	temp[r2] = offsprings[i].itinerary[r1];
+	float d1 = getDisFromIt(offsprings[i].itinerary, disMax);
+	float d2 = getDisFromIt(temp, disMax);
+	//check if the new one has shorter distacne
+	if (d1 > d2) {
+	strncpy(offsprings[i].itinerary, temp, CITIES);
+	}
+	}
+	}
+	}
+	
+	/**
+	* Helper function that calculate distance between two cities
+	*/
+	float getDis(char a, char b, int coordinates[CITIES][2]) {
+	int indexA = (a >= 'A') ? a - 'A' : a - '0' + 26;
+	int indexB = (b >= 'A') ? b - 'A' : b - '0' + 26;
+	float dis = (float) hypot((coordinates[indexA][0] - coordinates[indexB][0]),
+	(coordinates[indexA][1] - coordinates[indexB][1]));
+	return dis;
+	}
+	
+	/**
+	* Get distacne of the provided route from distance matrix
+	*/
+	float getDisFromIt(char str[CITIES], float disMax[CITIES][CITIES + 1]) {
+	int indexIn = (str[0] >= 'A') ? str[0] - 'A' : str[0] - '0' + 26;
+	double dis = disMax[indexIn][CITIES];
+	for (int j = 1; j < CITIES; ++j) {
+	int index = (str[j] >= 'A') ? str[j] - 'A' : str[j] - '0' + 26;
+	dis += disMax[indexIn][index];
+	
+	indexIn = index;
+	}
+	return dis;
+	}
+	
+	/**
+	* Get the position of the target character
+	* @param a target character
+	* @param source source string
+	* @return index of target char, -1 if not found
+	*/
+	int getIndex(char a, char source[CITIES]) {
+	for (int i = 0; i < CITIES; ++i) {
+	if (a == source[i]) return i;
+	}
+	return -1;
+	}
+	
+	/**
+	* get ascii representation of target char, and map it to its index
+	* based on ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+	*/
+	int getAscii(char source) {
+	return (source >= 'A') ? source - 'A' : source - '0' + 26;
+	}
+	
+	/**
+	* generate childA's complement
+	*/
+	char *getChildB(char childA[CITIES]) {
+	char *childB = (char *) malloc(sizeof(char) * CITIES);
+	for (int i = 0; i < CITIES; ++i) {
+	childB[i] = cit[(CITIES - getAscii(childA[i]) - 1)];
+	}
+	return childB;
+	}
+	
+	
+	/**
+	* Improved version with distance matrix, avoid calculating distance
+	* generates 25,000 off-springs from the parents, 
+	* calculate distance based on their coordinates
+	* @param parents
+	* @param offsprings
+	* @param disMax
+	*/
+	void crossoverB(Trip parents[TOP_X], Trip offsprings[TOP_X], float disMax[CITIES][CITIES + 1]) {
+	#pragma omp parallel for default(none) shared(parents, disMax, offsprings)
+	for (int i = 0; i < TOP_X; i += 2) {
+	int selected[100] = {0};
+	char child1[CITIES + 1];
+	char child2[CITIES + 1];
+	char *parent1 = parents[i].itinerary;
+	char *parent2 = parents[i + 1].itinerary;
+	child1[0] = parent1[0];
+	selected[child1[0]] = 1;
+	
+	for (int j = 0; j < (CITIES - 1); j++) {
+	int indexInA = getIndex(child1[j], parent1) + 1;
+	int indexInB = getIndex(child1[j], parent2) + 1;
+	
+	if (indexInA == -1 || indexInB == -1) {
+	printf("WHat?\n");
+	}
+	
+	if (indexInA >= CITIES) {
+	indexInA = 0;
+	}
+	if (indexInB >= CITIES) {
+	indexInB = 0;
+	}
+	
+	float disA = INT_MAX;
+	float disB = INT_MAX;
+	
+	if (selected[parent1[indexInA]] == 0) {
+	int indA = getAscii(child1[j]);
+	int indB = getAscii(parent1[indexInA]);
+	disA = disMax[indA][indB];
+	}
+	if (selected[parent2[indexInB]] == 0) {
+	int indA = getAscii(child1[j]);
+	int indB = getAscii(parent2[indexInB]);
+	disB = disMax[indA][indB];
+	}
+	
+	if (disA == INT_MAX && disB == INT_MAX) {
+	int r = rand() % CITIES;
+	int found = 0;
+	while (!found) {
+	if (selected[parent1[r]] != 1) {
+	found = 1;
+	child1[j + 1] = parent1[r];
+	}
+	r = ((r + 1) >= CITIES) ? 0 : (r + 1);
+	}
+	} else {
+	child1[j + 1] = (disA <= disB) ? parent1[indexInA] : parent2[indexInB];
+	}
+	
+	selected[child1[j + 1]] = 1;
+	}
+	
+	strcpy(child2, getChildB(child1));
+	strncpy(offsprings[i].itinerary, child1, CITIES);
+	strncpy(offsprings[i + 1].itinerary, child2, CITIES);
+	}
+	}
+	
+	/**
+	* randomly chooses two distinct cities (or genes)
+	* in each trip (or chromosome) with a
+	* given probability, and swaps them
+	* @param offsprings
+	*/
+	void mutate(Trip offsprings[TOP_X]) {
+	for (int i = 0; i < TOP_X; ++i) {
+	int rate = rand() % 100;
+	if (rate < MUTATE_RATE) {
+	int r1 = rand() % CITIES;
+	int r2 = rand() % CITIES;
+	char x1 = offsprings[i].itinerary[r1];
+	char x2 = offsprings[i].itinerary[r2];
+	offsprings[i].itinerary[r1] = x2;
+	offsprings[i].itinerary[r2] = x1;
+	}
+	}
+	}
+	
+	
+	/**
+	* Improved verison, uses distance matrix to avoid calculating distance
+	* Evaluates the distance of each trip and sorts out all the
+	* trips in the shortest-first order
+	* @param trip trips to evaluates
+	* @param disMax maxtrix that contain all the distance
+	* @param first if it's first generation
+	*/
+	void evaluateB(Trip trip[CHROMOSOMES], 
+	float disMax[CITIES][CITIES + 1], bool first) {
+	int start = 0;
+	if (!first) {
+	start = TOP_X;
+	}
+	
+	#pragma omp parallel for default(none) firstprivate(start) shared(trip, disMax)
+	for (int i = start; i < CHROMOSOMES; ++i) {
+	char temp[CITIES];
+	strncpy(temp, trip[i].itinerary, CITIES);
+	int indexIn = (temp[0] >= 'A') ? temp[0] - 'A' : temp[0] - '0' + 26;
+	double dis = disMax[indexIn][CITIES];
+	for (int j = 1; j < CITIES; ++j) {
+	int index = (temp[j] >= 'A') ? temp[j] - 'A' : temp[j] - '0' + 26;
+	dis += disMax[indexIn][index];
+	
+	indexIn = index;
+	}
+	trip[i].fitness = (float) dis;
+	//        printf("Thread %d executes loop iteration %d\n", omp_get_thread_num(), i);
+	}
+	sort(trip, trip + CHROMOSOMES, compareTrip);
+	}
+	\end{lstlisting}
+	\pagebreak
+	\subsection{Tsp.cpp}
+	\begin{lstlisting}
+	#include <iostream>  // cout
+	#include <fstream>   // ifstream
+	#include <string.h>  // strncpy
+	#include <stdlib.h>  // rand
+	#include <math.h>    // sqrt, pow
+	#include <omp.h>     // OpenMP
+	#include "Timer.h"
+	#include "Trip.h"
+	
+	using namespace std;
+	
+	void initialize(Trip trip[CHROMOSOMES], int coordinates[CITIES][2]);
+	
+	void select(Trip trip[CHROMOSOMES], Trip parents[TOP_X]);
+	
+	void populate(Trip trip[CHROMOSOMES], Trip offsprings[TOP_X]);
+	
+	void formDisMax(int coordinates[CITIES][2], float disMax[CITIES][CITIES + 1]);
+	
+	extern void evaluate(Trip trip[CHROMOSOMES], int coordinates[CITIES][2]);
+	
+	extern void evaluateB(Trip trip[CHROMOSOMES], float disMax[CITIES][CITIES + 1], bool first);
+	
+	extern void crossover(Trip parents[TOP_X], Trip offsprings[TOP_X], int coordinates[CITIES][2]);
+	
+	extern void crossoverB(Trip parents[TOP_X], Trip offsprings[TOP_X], float disMax[CITIES][CITIES +
+	1]);
+	extern void mutate(Trip offsprings[TOP_X]);
+	
+	extern void mutateB(Trip offsprings[TOP_X], float disMax[CITIES][CITIES + 1]);
+	
+	/*
+	* MAIN: usage: Tsp #threads
+	*/
+	int main(int argc, char *argv[]) {
+	//Start random seed based on current time value
+	srand(time(NULL));
+	
+	//static is required on windows machine
+	static Trip trip[CHROMOSOMES];       // all 50000 different trips (or chromosomes)
+	Trip shortest;                // the shortest path so far
+	int coordinates[CITIES][2];   // (x, y) coordinates of all 36 cities:
+	int nThreads = 1;
+	float disMax[CITIES][CITIES + 1];
+	
+	// verify the arguments
+	if (argc == 2)
+	nThreads = atoi(argv[1]);
+	else {
+	cout << "usage: Tsp #threads" << endl;
+	if (argc != 1)
+	return -1; // wrong arguments
+	}
+	cout << "# threads = " << nThreads << endl;
+	
+	// shortest path not yet initialized
+	shortest.itinerary[CITIES] = 0;  // null path
+	shortest.fitness = -1.0;         // invalid distance
+	
+	// initialize 5000 trips and 36 cities' coordinates
+	initialize(trip, coordinates);
+	
+	//from a distance matrix to improve efficiency
+	formDisMax(coordinates, disMax);
+	
+	// start a timer
+	Timer timer;
+	timer.start();
+	
+	// change # of threads
+	omp_set_num_threads(nThreads);
+	
+	// find the shortest path in each generation
+	for (int generation = 0; generation < MAX_GENERATION; generation++) {
+	// evaluate the distance of all 50000 trips
+	evaluate(trip, coordinates, generation == 0);
+	
+	// just print out the progress
+	if (generation % 20 == 0)
+	cout << "generation: " << generation << endl;
+	
+	// whenever a shorter path was found, update the shortest path
+	if (shortest.fitness < 0 || shortest.fitness > trip[0].fitness) {
+	strncpy(shortest.itinerary, trip[0].itinerary, CITIES);
+	shortest.fitness = trip[0].fitness;
+	
+	cout << "generation: " << generation
+	<< " shortest distance = " << shortest.fitness
+	<< "\t itinerary = " << shortest.itinerary << endl;
+	}
+	
+	// define TOP_X parents and offsprings.
+	// static is required on windows machine
+	static Trip parents[TOP_X], offsprings[TOP_X];
+	
+	// choose TOP_X parents from trip
+	select(trip, parents);
+	
+	// generates TOP_X offsprings from TOP_X parenets
+	crossover(parents, offsprings, coordinates);
+	
+	// mutate offsprings
+	mutateB(offsprings, disMax);
+	// populate the next generation.
+	populate(trip, offsprings);
+	}
+	
+	// stop a timer
+	cout << "elapsed time = " << timer.lap() << endl;
+	return 0;
+	}
+	/**
+	* Initializes trip[CHROMOSOMES] with chromosome.txt and coordiantes[CITIES][2] with cities.txt
+	*
+	* @param trip[CHROMOSOMES]:      50000 different trips
+	* @param coordinates[CITIES][2]: (x, y) coordinates of 36 different cities: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+	*/
+	void initialize(Trip trip[CHROMOSOMES], int coordinates[CITIES][2]) {
+	// open two files to read chromosomes (i.e., trips)  and cities
+	ifstream chromosome_file("chromosome.txt");
+	ifstream cities_file("cities.txt");
+	
+	for (int i = 0; i < CHROMOSOMES; i++) {
+	chromosome_file >> trip[i].itinerary;
+	trip[i].fitness = 0.0;
+	}
+	
+	for (int i = 0; i < CITIES; i++) {
+	char city;
+	cities_file >> city;
+	int index = (city >= 'A') ? city - 'A' : city - '0' + 26;
+	cities_file >> coordinates[index][0] >> coordinates[index][1];
+	}
+	
+	chromosome_file.close();
+	cities_file.close();
+	
+	if (DEBUG) {
+	for (int i = 0; i < CHROMOSOMES; i++)
+	cout << trip[i].itinerary << endl;
+	for (int i = 0; i < CITIES; i++)
+	cout << coordinates[i][0] << "\t" << coordinates[i][1] << endl;
+	}
+	}
+	
+	/**
+	* Select the first TOP_X parents from trip[CHROMOSOMES]
+	*
+	* @param trip[CHROMOSOMES]: all trips
+	* @param parents[TOP_X]:    the firt TOP_X parents
+	*/
+	void select(Trip trip[CHROMOSOMES], Trip parents[TOP_X]) {
+	// just copy TOP_X trips to parents
+	for (int i = 0; i < TOP_X; i++)
+	strncpy(parents[i].itinerary, trip[i].itinerary, CITIES + 1);
+	}
+	
+	/**
+	* Replace the bottom TOP_X trips with the TOP_X offsprings
+	*/
+	void populate(Trip trip[CHROMOSOMES], Trip offsprings[TOP_X]) {
+	// just copy TOP_X offsprings to the bottom TOP_X trips.
+	for (int i = 0; i < TOP_X; i++) {
+	strncpy(trip[CHROMOSOMES - TOP_X + i].itinerary, offsprings[i].itinerary, CITIES);
+	}
+	// for debugging
+	if (DEBUG) {
+	for (int chrom = 0; chrom < CHROMOSOMES; chrom++)
+	cout << "chrom[" << chrom << "] = " << trip[chrom].itinerary
+	<< ", trip distance = " << trip[chrom].fitness << endl;
+	}
+	}
+	
+	/**
+	* Generate CITIES distances for each city, total CITIES * CITIES distances
+	* @param coordinates (x, y) coordinates of CITIES different cities
+	* @param disMax Distance matrix
+	*/
+	void formDisMax(int coordinates[CITIES][2], float disMax[CITIES][CITIES + 1]) {
+	for (int i = 0; i < CITIES; ++i) {
+	for (int j = 0; j < CITIES; ++j) {
+	disMax[i][j] = hypot((coordinates[i][0] - coordinates[j][0]),
+	(coordinates[i][1] - coordinates[j][1]));
+	}
+	disMax[i][CITIES] = hypot(coordinates[i][0] , coordinates[i][1]);
+	}
+	}
+	\end{lstlisting}
+	
+	
+	
+	\section {Execution output}
+	\subsection{Output analysis}
+	\begin{enumerate} 
+		\item The shortest trip in my program is equal to 447.638
+		\item The performance improvement with four threads in my program is equal to 50548672 / 23005048 = 2.2 times
+	\end{enumerate}
+	
+	\subsection{Output}
+	\begin{small}
+		\noindent \# threads = 1 \newline
+		generation: 0 \newline
+		generation: 0 shortest distance = 1265.72	 itinerary = V1SPMBQAN26G4J37DX8OTF95ZUH0EYRLCWKI
+		generation: 1 shortest distance = 1031.81	 itinerary = I61YHO9F48KGATL7UJR3BQ20ENXVSCZWP5MD
+		generation: 2 shortest distance = 979.47	 itinerary = KFL94NT86OJAGX7RD3IU2W5PBS10EZHYVCMQ
+		generation: 3 shortest distance = 882.109	 itinerary = V1O6XG84K9AFLPDBM3Q7NTIUZJE02HYCSW5R
+		generation: 4 shortest distance = 724.804	 itinerary = V1YHEJUZ02CSW5MBQDR794X6IONTK8FALG3P
+		generation: 5 shortest distance = 627.852	 itinerary = V1YHEZ02CSW5MPBQDR3JU7ALGF4NT89KX6IO
+		generation: 7 shortest distance = 626.585	 itinerary = V1IO6JE02WCS5HZYFAL7R3DBQMPUKX4NT8G9
+		generation: 8 shortest distance = 603.274	 itinerary = V1YHEUZJWSC205MPQ3RDB7LAF9KGX48TN6OI
+		generation: 10 shortest distance = 556.14	 itinerary = V1YZHUE0MSWC5DBQR37LA9KFGXNT48IO6J2P
+		generation: 11 shortest distance = 542.062	 itinerary = V1YZHUE0MPBQR37LA9KFGXNT48IO6J2SWC5D
+		generation: 13 shortest distance = 477.948	 itinerary = V1YZHUE02WSC5MPBQDR37LA9KFGXNT48IO6J
+		generation: 16 shortest distance = 474.401	 itinerary = V1YZHUE02WSC5MPBQDR37LAFK9GXNT48IO6J
+		generation: 18 shortest distance = 467.935	 itinerary = V1YZHUE0J6OI84NTGXKF9AL7R3DBQPMSWC52
+		generation: 19 shortest distance = 467.25	 itinerary = V1YZH5CWSMPQBDR37LAF9KGXNT48IO6J0E2U
+		generation: 20\newline
+		generation: 20 shortest distance = 464.471	 itinerary = V1YZHUE20J6OI84NTGX9FKAL7R3DBQPMWSC5
+		generation: 24 shortest distance = 461.723	 itinerary = V1YZHUE025CWSMPQBDR37LA9KFGXNT48IO6J
+		generation: 30 shortest distance = 459.941	 itinerary = V1YZHUE20J6OI84NTGX9FKAL7R3DBQPMSWC5
+		generation: 33 shortest distance = 459.436	 itinerary = V1YZH5CWSMPQBDR37LAF9KGXNT48IO6JUE20
+		generation: 35 shortest distance = 458.176	 itinerary = V1YZHUE025CWSMPQBDR37LAFK9GXNT48IO6J
+		generation: 37 shortest distance = 457.536	 itinerary = V1YZH5CWSMPQBDR37LAF9KGXNT48IO6J02EU
+		generation: 40\newline
+		generation: 43 shortest distance = 456.303	 itinerary = V1YZHUE20J6OI84NTGX9KFAL7R3DBQPMSWC5
+		generation: 44 shortest distance = 452.975	 itinerary = V1YZHUE025CWSMPQBDR37LAF9KGXNT48IO6J
+		generation: 54 shortest distance = 449.658	 itinerary = V1YZHUE025CWSMPQBD3R7LAF9KGXNT48IO6J
+		generation: 60\newline
+		generation: 61 shortest distance = 449.552	 itinerary = V1YZHUE20J6OI84NTXGK9FAL7R3DBQPMSWC5
+		generation: 71 shortest distance = 447.638	 itinerary = V1YZHUE20J6OI84TNXGK9FAL7R3DBQPMSWC5
+		generation: 80\newline
+		generation: 100\newline
+		generation: 120\newline
+		generation: 140\newline
+		elapsed time = 50548672
+		
+		
+		\noindent \# threads = 4 \newline
+		generation: 0 \newline
+		generation: 0 shortest distance = 1265.72	 itinerary = V1SPMBQAN26G4J37DX8OTF95ZUH0EYRLCWKI
+		generation: 1 shortest distance = 1043.94	 itinerary = I61YHO9F48KGATL7UJR3BQ2P5SCZW0ENXVMD
+		generation: 2 shortest distance = 871.976	 itinerary = VU25BSCWMPQDR37JZHT8IONX9AF46K0EY1GL
+		generation: 3 shortest distance = 825.757	 itinerary = V8TNKA9FXGIO1HZYUE5C6RL73DMBQPSW2J04
+		generation: 4 shortest distance = 805.385	 itinerary = 1VKF9X7AGTJ6OI4N83RL0SWC25BPMQDEUHYZ
+		generation: 5 shortest distance = 716.93	 itinerary = 8TN4X9KGAF6OIJ02EHYZU1VSCWM5BDL7R3QP
+		generation: 7 shortest distance = 652.966	 itinerary = 1V6OI9KFAL7J0WC5SMPBQ3RDHZYUE284GXNT
+		generation: 8 shortest distance = 635.406	 itinerary = V1YIO6NTXK948GR3DBPMS5CW02ZHUEJ7LFAQ
+		generation: 9 shortest distance = 583.042	 itinerary = V1YZUH5CSWMPBQD3R7AF9KTNX4GOI68L2E0J
+		generation: 10 shortest distance = 564.252	 itinerary = V1YHUZ5CWSMPQBDR37LJOI4NT89FKXGA6E02
+		generation: 11 shortest distance = 558.654	 itinerary = UHZY1VO6I8KGXNT49FAL7R3QBPMSWC520EJD
+		generation: 12 shortest distance = 545.421	 itinerary = V1YZHUE20J6OI9FK84NTGXAL73RDBQSWCMP5
+		generation: 13 shortest distance = 536.668	 itinerary = V1YZHUE20J6OI4N8T9XGKFAL73R5CWSMPQBD
+		generation: 14 shortest distance = 520.507	 itinerary = V1YZHU5CWSE0J6OI84NTXG9KFAL7R3DBPM2Q
+		generation: 15 shortest distance = 496.876	 itinerary = V1YZHUE0J6OI84NTXGK9FLA7R325CWSMPBDQ
+		generation: 16 shortest distance = 496.376	 itinerary = V1YZHUE02WSC5MPQBD3R7LAGXKF984NTJ6OI
+		generation: 17 shortest distance = 484.545	 itinerary = V1YZHUE02J6OI84NT9FKXGAL7R3QBDPMSWC5
+		generation: 18 shortest distance = 469.679	 itinerary = V1YZHUE025CWSMPQBDR37LAFKGXNT849IO6J
+		generation: 20\newline
+		generation: 22 shortest distance = 467.855	 itinerary = V1YZHUE02J6OI84NT9FKXGAL7R3DBQPMSWC5
+		generation: 24 shortest distance = 460.906	 itinerary = V1YZHUE20J6OI84NT9FKXGAL7R3DBQPMSWC5
+		generation: 29 shortest distance = 460.657	 itinerary = V1YZHUE02J6OI84NTXGKF9AL7R3DBQPMSWC5
+		generation: 36 shortest distance = 453.709	 itinerary = V1YZHUE20J6OI84NTXGKF9AL7R3DBQPMSWC5
+		generation: 40\newline
+		generation: 43 shortest distance = 449.552	 itinerary = V1YZHUE20J6OI84NTXGK9FAL7R3DBQPMSWC5
+		generation: 60\newline
+		generation: 60 shortest distance = 447.638	 itinerary = V1YZHUE20J6OI84TNXGK9FAL7R3DBQPMSWC5
+		generation: 80\newline
+		generation: 100\newline
+		generation: 120\newline
+		generation: 140\newline
+		elapsed time = 23005048
+	\end{small}
+	
+	
+	\section {Discussions}
+	In addition, I tried to improve the whole efficiency by replacing calculating distance with a cached matrix that contains all the 36 * 36 distance. This implementation decrease significant amount of time spent, although this made the program program with single thread runs faster than that with multi-thread. This also explained why select() with multi-thread could be slower than that with single thread. Starting a multi-thread could require some time to analysis the for-loop and distribute the tasks. Therefore, it is best to use multi-thread when the loop is large and require large computational power. \par To improve the performance of current program, just use the implementation I mentioned above to shorten the time required to calculate the distance. However, this only works with the current data set, it could be less efficient with larger data sets.
+	
+	\section {Lab Sessions 1}
+	Lab 1 we parallelize two programs that compute Pi using Monte Carlo methods and Integration. As the result shown, multi-thread decrease significant amount of time that required to finish the program. However, if the number of iterations is too small, the performance would decrease.
+	
+	\subsection{Execution output }
+	\noindent \large pi\_integral\_omp
+	
+	
+	\begin{small}	
+		
+		\noindent Enter the number of iterations used to estimate pi: 1000000000\newline
+		Enter the number of threads: 1\newline
+		elapsed time for pi = 10850791\newline
+		\# of trials = 1000000000, estimate of pi is  3.1415926535899708, Error is 0.0000000000001776\newline
+		
+		\noindent Enter the number of iterations used to estimate pi: 1000000000 \newline
+		Enter the number of threads: 4 \newline
+		elapsed time for pi = 2831500 \newline
+		\# of trials = 1000000000, estimate of pi is  3.1415926535898211, Error is 0.0000000000000280 \newline
+		
+	\end{small}
+	
+	\noindent \large pi\_monte\_omp
+	
+	\begin{small}	
+		
+		\noindent Enter the number of iterations used to estimate pi: 1000000000\newline
+		Enter the number of threads: 1\newline
+		elapsed time for pi = 44118944\newline
+		\# of trials = 1000000000, estimate of pi is  3.1416131730000001, Error is 0.0000205194102070\newline
+		
+		\noindent Enter the number of iterations used to estimate pi: 1000000000\newline
+		Enter the number of threads: 4\newline
+		elapsed time for pi = 14253004\newline
+		\# of trials = 1000000000, estimate of pi is  3.1415967750000000, Error is 0.0000041214102069\newline
+		
+	\end{small}
+	
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
