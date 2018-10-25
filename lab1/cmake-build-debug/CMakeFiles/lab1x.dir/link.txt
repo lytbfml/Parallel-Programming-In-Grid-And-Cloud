@@ -1,1 +1,0 @@
-/usr/bin/c++.exe  -std=c++11 -fopenmp -g  -Wl,--enable-auto-import CMakeFiles/lab1x.dir/Timer.cpp.o  -o lab1x.exe -Wl,--out-implib,liblab1x.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

@@ -1,1 +1,0 @@
-/usr/bin/c++.exe  -fopenmp -g  -Wl,--enable-auto-import  CMakeFiles/pi_monte.dir/pi_monte.cpp.o CMakeFiles/pi_monte.dir/Timer.cpp.o  -o pi_monte.exe -Wl,--out-implib,libpi_monte.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

@@ -1,6 +1,0 @@
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/edit_cache.dir
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/pi_monte_omp.dir
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/pi_monte.dir
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/pi_integral.dir
-/cygdrive/c/Users/lytbf/Documents/Code/lab1/cmake-build-debug/CMakeFiles/pi_integral_omp.dir

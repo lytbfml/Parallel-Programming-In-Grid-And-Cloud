@@ -1,1 +1,0 @@
-/usr/bin/c++.exe  -std=c++11 -fopenmp -g  -Wl,--enable-auto-import CMakeFiles/foo.dir/pi_monte.cpp.o CMakeFiles/foo.dir/Timer.cpp.o  -o foo.exe -Wl,--out-implib,libfoo.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
