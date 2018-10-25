@@ -1,0 +1,71 @@
+The process for setting it up to run the first time for each user is
+cumbersome.  After the initial user set-up it works well without much
+fuss.
+
+# login as self
+# make file .mpd.conf  vi/emacs/pico .mpd.conf    
+# in it write one line:
+secretword=<secretword>
+
+where <secretword> is a secure key you create but not your normal password
+save the file
+
+# set the correct permissions on this file (other permissions won't work)
+chmod 600 .mpd.conf
+
+# copy the mpd.hosts file to your home directory
+cp /usr/apps/mpich2/mpd.hosts ~/mpd.hosts
+
+edit .bash_profile file - add mpich path to $PATH 
+ PATH=$PATH:/usr/local/mpich2/bin
+ export $PATH
+
+either relogin or type at the command line:
+export PATH=/usr/local/mpich2/bin:$PATH
+
+# test that your set-up works on the current host
+mpd &
+mpiexec -n 1 /bin/hostname
+mpdallexit
+
+# if you get an error or warning this is a problem.  
+# You should get the hostname of your current host
+
+**  Need to be able to ssh without a password to other machines in order to
+use MPICH.  If this is not already set up:
+**************************************************************************
+**  ssh-keygen -t rsa                                                   **
+**  #  at "Enter file in which to save key", <enter> to accept default  **
+**  #  at "Enter passphrase" <enter> to keep the passphrase empty.      **
+**  #  do the same thing again                                          **
+**  #  then go to the .ssh directory                                    **
+**  # and change the name of id_rsa.pub to authorized_keys              **
+**  cd .ssh                                                             **
+**  mv id_rsa.pub authorized_keys                                       **
+**  # ssh to all lab machines to set up                                 **
+**  # first ssh need to respond "yes" to "continue connecting"          **
+**************************************************************************
+
+The first time a new host is added to the first "ring"; it needs to be
+established by a "yes" response to "continue connecting".  Every time the
+output hangs, type "yes".
+
+You can get all 32 hosts by starting a ring of 4 and typing "yes" 4
+times, then starting a ring of 8 (the original 4 plus 4 more) and
+typing "yes" 4 times.  After the initial 8, I had to add one at a
+time, with the new host always being the last.
+
+Once you have added all the hosts in this way, you never have to type
+"yes" again, they were all established for mpich.
+
+mpdboot -n 4 -v
+mpdallexit
+mpdboot -n 8 -v
+mpdallexit
+mpdboot -n 9 -v
+mpdallexit
+mpdboot -n 10 -v
+mpdallexit
+mpdboot -n 11 -v
+mpdallexit
+

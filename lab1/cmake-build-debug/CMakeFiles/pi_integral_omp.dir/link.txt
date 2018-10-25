@@ -1,0 +1,1 @@
+/usr/bin/c++.exe  -fopenmp -g  -Wl,--enable-auto-import  CMakeFiles/pi_integral_omp.dir/pi_integral_omp.cpp.o CMakeFiles/pi_integral_omp.dir/Timer.cpp.o  -o pi_integral_omp.exe -Wl,--out-implib,libpi_integral_omp.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

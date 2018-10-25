@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/lab2/Timer.cpp
+Timer.h
+/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/lab2/Timer.h
+
+/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/lab2/Timer.h
+iostream
+-
+sys/time.h
+-
+
+/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/lab2/matrix.cpp
+stdlib.h
+-
+iostream
+-
+Timer.h
+/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/lab2/Timer.h
+

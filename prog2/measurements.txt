@@ -1,0 +1,67 @@
+css534@uw1-320-10:~/prog2$ cat mpd.hosts 
+uw1-320-10.uwb.edu
+uw1-320-11.uwb.edu
+uw1-320-12.uwb.edu
+uw1-320-13.uwb.edu
+css534@uw1-320-10:~/prog2$ mpdboot -n 4 -v
+running mpdallexit on uw1-320-10
+LAUNCHED mpd on uw1-320-10  via  
+RUNNING: mpd on uw1-320-10
+LAUNCHED mpd on uw1-320-11.uwb.edu  via  uw1-320-10
+LAUNCHED mpd on uw1-320-12.uwb.edu  via  uw1-320-10
+LAUNCHED mpd on uw1-320-13.uwb.edu  via  uw1-320-10
+RUNNING: mpd on uw1-320-11.uwb.edu
+RUNNING: mpd on uw1-320-12.uwb.edu
+RUNNING: mpd on uw1-320-13.uwb.edu
+css534@uw1-320-10:~/prog2$ Wave2D 100 500 10 > out1.txt
+Elapsed time = 391115
+css534@uw1-320-10:~/prog2$ mpirun -n 4 Wave2D_mpi 100 500 10 4 > out4.txt
+rank[0]'s range = 0 ~ 24
+rank[1]'s range = 25 ~ 49
+rank[2]'s range = 50 ~ 74
+rank[3]'s range = 75 ~ 99
+Elapsed time = 772250
+css534@uw1-320-10:~/prog2$ diff out1.txt out4.txt
+css534@uw1-320-10:~/prog2$ Wave2D 576 500 0
+Elapsed time = 2106527
+css534@uw1-320-10:~/prog2$ mpirun -np 1 Wave2D_mpi 576 500 0 1
+rank[0]'s range = 0 ~ 575
+Elapsed time = 2101795
+css534@uw1-320-10:~/prog2$ mpirun -np 1 Wave2D_mpi 576 500 0 2
+rank[0]'s range = 0 ~ 575
+Elapsed time = 1112091
+css534@uw1-320-10:~/prog2$ mpirun -np 1 Wave2D_mpi 576 500 0 4
+rank[0]'s range = 0 ~ 575
+Elapsed time = 631505
+css534@uw1-320-10:~/prog2$ mpirun -np 2 Wave2D_mpi 576 500 0 1
+rank[1]'s range = 288 ~ 575
+rank[0]'s range = 0 ~ 287
+Elapsed time = 1335987
+css534@uw1-320-10:~/prog2$ mpirun -np 2 Wave2D_mpi 576 500 0 2
+rank[0]'s range = 0 ~ 287
+rank[1]'s range = 288 ~ 575
+Elapsed time = 893939
+css534@uw1-320-10:~/prog2$ mpirun -np 2 Wave2D_mpi 576 500 0 4
+rank[0]'s range = 0 ~ 287
+rank[1]'s range = 288 ~ 575
+Elapsed time = 575675
+css534@uw1-320-10:~/prog2$ mpirun -np 4 Wave2D_mpi 576 500 0 1
+rank[0]'s range = 0 ~ 143
+rank[1]'s range = 144 ~ 287
+rank[3]'s range = 432 ~ 575
+rank[2]'s range = 288 ~ 431
+Elapsed time = 931959
+css534@uw1-320-10:~/prog2$ mpirun -np 4 Wave2D_mpi 576 500 0 2
+rank[0]'s range = 0 ~ 143
+rank[1]'s range = 144 ~ 287
+rank[2]'s range = 288 ~ 431
+rank[3]'s range = 432 ~ 575
+Elapsed time = 681366
+css534@uw1-320-10:~/prog2$ mpirun -np 4 Wave2D_mpi 576 500 0 4
+rank[0]'s range = 0 ~ 143
+rank[2]'s range = 288 ~ 431
+rank[1]'s range = 144 ~ 287
+rank[3]'s range = 432 ~ 575
+Elapsed time = 525239
+css534@uw1-320-10:~/prog2$ mpdallexit
+css534@uw1-320-10:~/prog2$ 

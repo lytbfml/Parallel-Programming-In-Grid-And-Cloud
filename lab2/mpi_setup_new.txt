@@ -1,0 +1,79 @@
+The process for setting it up to run the first time for each user is
+cumbersome.  After the initial user set-up it works well without much
+fuss.
+
+# login as self
+# make file .mpd.conf  vi/emacs/pico .mpd.conf    
+# in it write one line:
+secretword=<secretword>
+
+where <secretword> is a secure key you create but not your normal password
+save the file. You may write:
+secretword=css534
+
+# set the correct permissions on this file (other permissions won't work)
+chmod 600 .mpd.conf
+
+# create the mpd.hosts file in your "home" directry.
+The file should include a list of uw1-320 "slave" machines as seen in
+~css534/lab2/mpd.hosts:
+
+uw1-320-11.uwb.edu
+uw1-320-12.uwb.edu
+uw1-320-13.uwb.edu
+
+Don't include the machine that will become your master node or rank0.
+Make sure that mpd.hosts is stored in your home directory rather than
+your working directory.
+
+edit .bash_profile file - add mpich path to $PATH 
+PATH=/usr/apps/mpich121-`uname -p`/bin:$PATH
+export PATH
+
+either relogin or type at the command line:
+export PATH=/usr/apps/mpich121-`uname -p`/bin:$PATH
+
+# test that your set-up works on the current host
+mpd &
+mpiexec -n 1 /bin/hostname
+mpdallexit
+
+# if you get an error or warning this is a problem.  
+# You should get the hostname of your current host
+
+**  Need to be able to ssh without a password to other machines in order to
+use MPICH.  If this is not already set up:
+**************************************************************************
+**  ssh-keygen -t rsa                                                   **
+**  #  at "Enter file in which to save key", <enter> to accept default  **
+**  #  at "Enter passphrase" <enter> to keep the passphrase empty.      **
+**  #  do the same thing again                                          **
+**  #  then go to the .ssh directory                                    **
+**  # and change the name of id_rsa.pub to authorized_keys              **
+**  cd .ssh                                                             **
+**  mv id_rsa.pub authorized_keys                                       **
+**  # ssh to all lab machines to set up                                 **
+**  # first ssh need to respond "yes" to "continue connecting"          **
+**************************************************************************
+
+The first time a new host is added to the first "ring". This in turn means
+that, before running mpdboot, you need to login all the slave nodes from
+the master. In the above mpd.hosts example. you need to login from
+uw1-320-10 to 
+
+uw1-320-11
+uw1-320-12
+uw1-320-13
+
+Thereafter, you can launch mpd at all nodes.
+
+CSSmpdboot -n 1 -v
+mpdallexit
+CSSmpdboot -n 2 -v
+mpdallexit
+CSSmpdboot -n 3 -v
+mpdallexit
+CSSmpdboot -n 4 -v
+mpdallexit
+
+

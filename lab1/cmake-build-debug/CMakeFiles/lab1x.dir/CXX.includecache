@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/cygdrive/c/Users/lytbf/Documents/Code/lab1/Timer.cpp
+Timer.h
+/cygdrive/c/Users/lytbf/Documents/Code/lab1/Timer.h
+
+/cygdrive/c/Users/lytbf/Documents/Code/lab1/Timer.h
+iostream
+-
+sys/time.h
+-
+
