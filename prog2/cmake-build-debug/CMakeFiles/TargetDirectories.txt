@@ -1,3 +1,0 @@
-/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/prog2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/prog2/cmake-build-debug/CMakeFiles/Wave2D.dir
-/cygdrive/c/Users/lytbf/Documents/Code/CSS534_Parallel/prog2/cmake-build-debug/CMakeFiles/edit_cache.dir

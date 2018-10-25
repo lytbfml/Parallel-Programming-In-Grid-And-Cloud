@@ -1,1 +1,0 @@
-/usr/bin/c++.exe -g  -Wl,--enable-auto-import CMakeFiles/Wave2D.dir/Wave2D.cpp.o CMakeFiles/Wave2D.dir/Timer.cpp.o  -o Wave2D.exe -Wl,--out-implib,libWave2D.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
