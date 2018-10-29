@@ -78,10 +78,10 @@ int main(int argc, char *argv[]) {
         printf("1 \n");
         for (int j = 0; j < size; j++) {
             for (int i = 0; i < size; i++) {
-                if(abs(z[1][i][j] - 0.0) > 0.0) {
+                if (abs(z[1][i][j] - 0.0) > 0.0) {
                     printf("%g ", z[1][i][j]);
                 } else {
-                    printf("0 ");
+                    cout << ("0 ");
                 }
             }
             printf("\n");
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
             printf("%d\n", t);
             for (int j = 0; j < size; j++) {
                 for (int i = 0; i < size; i++) {
-                    if(abs(z[time][i][j] - 0.0) > 0.0) {
+                    if (abs(z[time][i][j] - 0.0) > 0.0) {
                         printf("%g ", z[time][i][j]);
                     } else {
                         printf("0 ");
@@ -127,6 +127,16 @@ int main(int argc, char *argv[]) {
         }
     } // end of simulation
     
+    int numbers2[2][3][3] = {{{1,  2,  3},  {4,  5,  6},  {7,  8,  9}},
+                             {{11, 21, 31}, {41, 51, 61}, {71, 81, 91}}};
+    int numbers[3][3] = {{1, 2, 3},
+                         {4, 5, 6},
+                         {7, 8, 9}};
+    cout << *(*(numbers + 2) + 1) << endl;
+    
+    for (int k = 0; k < 3; ++k) {
+        cout << *(*(*(numbers2 + 1) + 1) + k) << endl;
+    }
     
     // finish the timer
     cerr << "Elapsed time = " << time.lap() << endl;

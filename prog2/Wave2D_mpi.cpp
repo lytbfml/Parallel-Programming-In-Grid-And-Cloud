@@ -15,19 +15,17 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     int my_rank = 0;            // used by MPI
-               // used by MPI
-    
-    
+    // used by MPI
     
     // verify arguments
-    if (argc != 4) {
+    if (argc != 5) {
         cerr << "usage: Wave2D size max_time interval mpi_size" << endl;
         return -1;
     }
     int size = atoi(argv[1]);
     int max_time = atoi(argv[2]);
     int interval = atoi(argv[3]);
-    int mpi_size = 1;
+    int mpi_size = atoi(argv[4]);
     
     if (size < 100 || max_time < 3 || interval < 0 || mpi_size <= 0) {
         cerr << "usage: Wave2D size max_time interval" << endl;
@@ -38,6 +36,7 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv); // start MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    
     
     
     // create a simulation space
@@ -130,14 +129,7 @@ int main(int argc, char *argv[]) {
             
             MPI_Status status;
             MPI_Recv(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
-        } else if (my_rank == 1) {
-            MPI_Send(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD);
-            MPI_Send(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
-            
-            MPI_Status status;
-            MPI_Recv(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
-        } else if (my_rank == 2) {
+        } else if (my_rank == 1 || my_rank == 2) {
             MPI_Send(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD);
             MPI_Send(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
             
@@ -150,7 +142,8 @@ int main(int argc, char *argv[]) {
             MPI_Status status;
             MPI_Recv(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
         }
-        
+    
+        //printf("%d, Time: %d\n", my_rank, t);
         
         for (int i = 0; i < size; ++i) {
             if (my_rank != 0) {
@@ -168,7 +161,7 @@ int main(int argc, char *argv[]) {
         }
         
         for (int i = my_rank * stripe; i < (my_rank + 1) * stripe; i++) {
-            if (i == 0) {
+            if (i == 0 || i == size - 1) {
                 continue;
             }
             for (int j = 1; j < size - 1; j++) {
@@ -180,31 +173,40 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        if(my_rank != 0) {
-        
-        }
-        
-        if (my_rank == 0 && t % interval == 0) {
-            printf("%d\n", t);
-            for (int j = 0; j < size; j++) {
-                for (int i = 0; i < size; i++) {
-                    if (abs(z[time][i][j] - 0.0) > 0.0) {
-                        printf("%g ", z[time][i][j]);
-                    } else {
-                        printf("0 ");
+        if (my_rank == 0) {
+            for (int rank = 1; rank < mpi_size; ++rank) {
+                MPI_Status status;
+                MPI_Recv((*(z + time) + rank * stripe), stripe * size, MPI_DOUBLE, rank, 0,
+                        MPI_COMM_WORLD,
+                        &status);
+            }
+    
+            if (my_rank == 0 && t % interval == 0) {
+                printf("t=%d\n", t);
+                for (int j = 0; j < size; j++) {
+                    for (int i = 0; i < size; i++) {
+                        if (abs(z[time][i][j] - 0.0) > 0.0) {
+                            printf("%g ", z[time][i][j]);
+                        } else {
+                            printf("0 ");
+                        }
                     }
+                    printf("\n");
                 }
                 printf("\n");
             }
-            printf("\n");
+            
+        } else {
+            MPI_Send((*(z + time) + my_rank * stripe), stripe * size, MPI_DOUBLE, 0, 0,
+                    MPI_COMM_WORLD);
         }
+    
     } // end of simulation
     
+    MPI_Finalize(); // shut down MPI
     
     // finish the timer
     cerr << "Elapsed time = " << time.lap() << endl;
-    
-    MPI_Finalize(); // shut down MPI
     
     return 0;
 }
