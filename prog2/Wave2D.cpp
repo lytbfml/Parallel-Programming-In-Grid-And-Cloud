@@ -54,16 +54,16 @@ int main(int argc, char *argv[]) {
     }
     
     //print every step include time = 0
-    if (interval == 1) {
-        printf("0 \n");
-        for (int j = 0; j < size; j++) {
-            for (int i = 0; i < size; i++) {
-                printf("%g ", z[0][i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+//    if (interval == 1) {
+//        printf("0 \n");
+//        for (int j = 0; j < size; j++) {
+//            for (int i = 0; i < size; i++) {
+//                printf("%g ", z[0][i][j]);
+//            }
+//            printf("\n");
+//        }
+//        printf("\n");
+//    }
     
     // time = 1
     for (int i = 1; i < size - 1; i++) {
@@ -74,20 +74,20 @@ int main(int argc, char *argv[]) {
     }
     
     //print every step include time = 1
-    if (interval == 1) {
-        printf("1 \n");
-        for (int j = 0; j < size; j++) {
-            for (int i = 0; i < size; i++) {
-                if (abs(z[1][i][j] - 0.0) > 0.0) {
-                    printf("%g ", z[1][i][j]);
-                } else {
-                    cout << ("0 ");
-                }
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+//    if (interval == 1) {
+//        printf("1 \n");
+//        for (int j = 0; j < size; j++) {
+//            for (int i = 0; i < size; i++) {
+//                if (abs(z[1][i][j] - 0.0) > 0.0) {
+//                    printf("%g ", z[1][i][j]);
+//                } else {
+//                    cout << ("0 ");
+//                }
+//            }
+//            printf("\n");
+//        }
+//        printf("\n");
+//    }
     
     // simulate wave diffusion from time = 2
     for (int t = 2; t < max_time; t++) {
@@ -111,32 +111,28 @@ int main(int argc, char *argv[]) {
                                 z[time_1][i][j - 1] - (4.0 * z[time_1][i][j])));
             }
         }
-        if (t % interval == 0) {
-            printf("%d\n", t);
+        if (interval != 0 && t % interval == 0) {
+            cout << t << endl;
             for (int j = 0; j < size; j++) {
                 for (int i = 0; i < size; i++) {
-                    if (abs(z[time][i][j] - 0.0) > 0.0) {
-                        printf("%g ", z[time][i][j]);
-                    } else {
-                        printf("0 ");
-                    }
+                    cout << z[time][i][j] << " ";
                 }
-                printf("\n");
+                cout << endl;
             }
-            printf("\n");
+            cout << endl;
         }
     } // end of simulation
     
-    int numbers2[2][3][3] = {{{1,  2,  3},  {4,  5,  6},  {7,  8,  9}},
-                             {{11, 21, 31}, {41, 51, 61}, {71, 81, 91}}};
-    int numbers[3][3] = {{1, 2, 3},
-                         {4, 5, 6},
-                         {7, 8, 9}};
-    cout << *(*(numbers + 2) + 1) << endl;
-    
-    for (int k = 0; k < 3; ++k) {
-        cout << *(*(*(numbers2 + 1) + 1) + k) << endl;
-    }
+//    int numbers2[2][3][3] = {{{1,  2,  3},  {4,  5,  6},  {7,  8,  9}},
+//                             {{11, 21, 31}, {41, 51, 61}, {71, 81, 91}}};
+//    int numbers[3][3] = {{1, 2, 3},
+//                         {4, 5, 6},
+//                         {7, 8, 9}};
+//    cout << *(*(numbers + 2) + 1) << endl;
+//
+//    for (int k = 0; k < 3; ++k) {
+//        cout << *(*(*(numbers2 + 1) + 1) + k) << endl;
+//    }
     
     // finish the timer
     cerr << "Elapsed time = " << time.lap() << endl;

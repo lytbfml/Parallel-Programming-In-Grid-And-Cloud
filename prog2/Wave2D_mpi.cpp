@@ -19,15 +19,16 @@ int main(int argc, char *argv[]) {
     
     // verify arguments
     if (argc != 5) {
-        cerr << "usage: Wave2D size max_time interval mpi_size" << endl;
+        cerr << "usage: Wave2D size max_time interval n_thread" << endl;
         return -1;
     }
     int size = atoi(argv[1]);
     int max_time = atoi(argv[2]);
     int interval = atoi(argv[3]);
-    int mpi_size = atoi(argv[4]);
+    int nThread = atoi(argv[4]);
+    int mpi_size;
     
-    if (size < 100 || max_time < 3 || interval < 0 || mpi_size <= 0) {
+    if (size < 100 || max_time < 3 || interval < 0 || nThread <= 0) {
         cerr << "usage: Wave2D size max_time interval" << endl;
         cerr << "       where size >= 100 && time >= 3 && interval >= 0 && mpi_size > 0" << endl;
         return -1;
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     
-    
+    omp_set_num_threads(nThreads);
     
     // create a simulation space
     double z[3][size][size];
@@ -65,16 +66,16 @@ int main(int argc, char *argv[]) {
     }
     
     //print every step include time = 0
-    if (my_rank == 0 && interval == 1) {
-        printf("0\n");
-        for (int j = 0; j < size; j++) {
-            for (int i = 0; i < size; i++) {
-                printf("%g ", z[0][i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+//    if (my_rank == 0 && interval == 1) {
+//        cout << "0" << endl;
+//        for (int j = 0; j < size; j++) {
+//            for (int i = 0; i < size; i++) {
+//                cout << z[0][i][j] << " ";
+//            }
+//            cout << endl;
+//        }
+//        cout << endl;
+//    }
     
     // time = 1
     for (int i = 1; i < size - 1; i++) {
@@ -85,20 +86,16 @@ int main(int argc, char *argv[]) {
     }
     
     //print every step include time = 1
-    if (my_rank == 0 && interval == 1) {
-        printf("1\n");
-        for (int j = 0; j < size; j++) {
-            for (int i = 0; i < size; i++) {
-                if (abs(z[1][i][j] - 0.0) > 0.0) {
-                    printf("%g ", z[1][i][j]);
-                } else {
-                    printf("0 ");
-                }
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+//    if (my_rank == 0 && interval == 1) {
+//        cout << 1 << endl;
+//        for (int j = 0; j < size; j++) {
+//            for (int i = 0; i < size; i++) {
+//                cout << z[1][i][j] << " ";
+//            }
+//            cout << endl;
+//        }
+//        cout << endl;
+//    }
     
     int stripe = size / mpi_size;     // partitioned stripe
     
@@ -117,47 +114,39 @@ int main(int argc, char *argv[]) {
             time_2 = 0;
         }
         
-        double bound1[size];
-        double bound2[size];
         
-        for (int i = 0; i < size; ++i) {
-            bound1[i] = z[time_1][stripe * my_rank][i];
-            bound2[i] = z[time_1][stripe * (my_rank + 1) - 1][i];
-        }
         if (my_rank == 0) {
-            MPI_Send(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
-            
+            MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank +
+                    1, 0, MPI_COMM_WORLD);
+//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             MPI_Status status;
-            MPI_Recv(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
-        } else if (my_rank == 1 || my_rank == 2) {
-            MPI_Send(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD);
-            MPI_Send(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
+            MPI_Recv(*(*(z + time_1) + stripe), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD,
+                    &status);
+//            cout<< my_rank << ":"<< t <<"recv over"<<endl;
             
+        } else if (my_rank == mpi_size - 1) {
+            MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank -
+                    1, 0, MPI_COMM_WORLD);
+//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             MPI_Status status;
-            MPI_Recv(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(bound2, size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0,
+                    MPI_COMM_WORLD, &status);
+//            cout<< my_rank << ":"<< t <<"recv over"<<endl;
         } else {
-            MPI_Send(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD);
+            MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank - 1, 0,
+                    MPI_COMM_WORLD);
+//            cout<< my_rank << ":"<< t <<"send over"<<endl;
+            MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank + 1,
+                    0, MPI_COMM_WORLD);
+//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             
             MPI_Status status;
-            MPI_Recv(bound1, size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
-        }
-    
-        //printf("%d, Time: %d\n", my_rank, t);
-        
-        for (int i = 0; i < size; ++i) {
-            if (my_rank != 0) {
-                z[time_1][stripe * my_rank - 1][i] = bound1[i];
-            }
-            if (my_rank != (mpi_size - 1)) {
-                z[time_1][stripe * (my_rank + 1)][i] = bound2[i];
-            }
-        }
-        
-        for (int i = 0; i < size; ++i) {
-            
-            z[time_1][stripe * my_rank - 1][i] = bound1[i];
-            z[time_1][stripe * (my_rank + 1)][i] = bound2[i];
+            MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0,
+                    MPI_COMM_WORLD, &status);
+//            cout<< my_rank << ":"<< t<<"recv over"<<endl;
+            MPI_Recv(*(*(z + time_1) + stripe * (my_rank + 1)), size, MPI_DOUBLE, my_rank + 1, 0,
+                    MPI_COMM_WORLD, &status);
+//            cout<< my_rank << ":"<< t<<"recv over"<<endl;
         }
         
         for (int i = my_rank * stripe; i < (my_rank + 1) * stripe; i++) {
@@ -173,34 +162,33 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        if (my_rank == 0) {
-            for (int rank = 1; rank < mpi_size; ++rank) {
-                MPI_Status status;
-                MPI_Recv((*(z + time) + rank * stripe), stripe * size, MPI_DOUBLE, rank, 0,
-                        MPI_COMM_WORLD,
-                        &status);
-            }
+        
+        if (interval != 0 && t % interval == 0) {
+            if (my_rank == 0) {
+                for (int rank = 1; rank < mpi_size; ++rank) {
+                    MPI_Status status;
+                    MPI_Recv(*(*(z + time) + rank * stripe), stripe * size, MPI_DOUBLE, rank, 0,
+                            MPI_COMM_WORLD, &status);
+//                    cout<<"Aggregate:" << t <<endl;
+                }
     
-            if (my_rank == 0 && t % interval == 0) {
-                printf("t=%d\n", t);
+                cout << t << endl;
                 for (int j = 0; j < size; j++) {
                     for (int i = 0; i < size; i++) {
-                        if (abs(z[time][i][j] - 0.0) > 0.0) {
-                            printf("%g ", z[time][i][j]);
-                        } else {
-                            printf("0 ");
-                        }
+                        cout << z[time][i][j] << " ";
                     }
-                    printf("\n");
+                    cout << endl;
                 }
-                printf("\n");
+                cout << endl;
+                
+            } else {
+                MPI_Send(*(*(z + time) + my_rank * stripe), stripe * size, MPI_DOUBLE, 0, 0,
+                        MPI_COMM_WORLD);
+//                cout<< my_rank << ", " <<  t << " send to 0"<<endl;
             }
             
-        } else {
-            MPI_Send((*(z + time) + my_rank * stripe), stripe * size, MPI_DOUBLE, 0, 0,
-                    MPI_COMM_WORLD);
         }
-    
+        
     } // end of simulation
     
     MPI_Finalize(); // shut down MPI

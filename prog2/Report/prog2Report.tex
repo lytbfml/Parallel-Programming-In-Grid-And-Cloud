@@ -1,0 +1,428 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage{color}
+\usepackage[linktoc=all]{hyperref}
+
+\usepackage[bindingoffset=0.2in,left=1in,right=1in,top=0.5in,bottom=1in,footskip=.25in]{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{mwe}
+\usepackage{parskip}
+\usepackage{indentfirst}
+\usepackage{textcomp}
+\usepackage[formats]{listings}
+\usepackage{xcolor}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\definecolor{Darkgreen}{RGB}{11,100,35}
+\usepackage{geometry}
+
+\geometry{
+	body={7.0in, 9.8in},
+	left=0.75in,
+	top=0.6in
+}
+
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,    
+	%   rulecolor=,
+	language=[GNU]C++,
+	basicstyle=\scriptsize,
+	upquote=true,
+	aboveskip={1.5\baselineskip},
+	columns=fixed,
+	showstringspaces=false,
+	extendedchars=false,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	frame=single,
+	numbers=left,
+	showtabs=false,
+	showspaces=false,
+	showstringspaces=false,
+	identifierstyle=\ttfamily,
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color[rgb]{0.026,0.112,0.095},
+	stringstyle=\color[rgb]{0.627,0.126,0.941},
+	numberstyle=\color[rgb]{0.205, 0.142, 0.73},
+	%        \lstdefinestyle{C++}{language=C++,style=numbers}’.
+}
+
+
+
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,
+	language=C++,
+	captionpos=b,
+	tabsize=3,
+	frame=lines,
+	numbers=left,
+	numberstyle=\tiny,
+	numbersep=5pt,
+	breaklines=true,
+	showstringspaces=false,
+	basicstyle=\footnotesize,
+	%  identifierstyle=\color{magenta},
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color{Darkgreen},
+	stringstyle=\color{red}
+}
+
+
+
+\setlength{\parindent}{15pt}
+%opening
+\title{Program 1 Report}
+\author{Yangxiao Wang}
+\date{ }
+
+
+
+\begin{document}
+	
+	\maketitle
+	
+	\tableofcontents
+	\pagebreak
+	
+	\section{Documentation}
+	In this project, we tried to solve Traveling salesman problem (TSP) with genetic algorithm. We are required to implement the core part of the algorithm: evaluation, crossover and mutation. Tsp problem often takes large amount of data and time. And to improve the efficiency, our approach is using OpenMP. My initial attempt is implement a greedy parallelization: parallelize the whole program from \textit{evaluate()} to \textit{populate()} with: \begin{lstlisting}
+	#pragma omp parallel for
+	\end{lstlisting}
+	however, after trying different things with the program, I realized that populate and mutate does not need to be parallelized. The time spent did increase not have much difference. And \textit{select()} with parallelization could spend more time than when running multi-thread. Therefore, the only functions I need to parallelize are \textit{crossover()} and \textit{evaluate()} which contain much larger loops. I simply added \begin{small}
+	\#pragma omp parallel for
+	\end{small} before the outer for loop inside \textit{crossover()} and \textit{evaluate()}. \par
+	
+	
+	
+	\section {Source code}
+	\subsection{Wave2D.cpp}
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	#include <iostream>
+	#include "Timer.h"
+	#include <stdlib.h>   // atoi
+	#include <math.h>
+	#include <stdio.h>
+	
+	int default_size = 100;  // the default system size
+	int defaultCellWidth = 8;
+	double c = 1.0;      // wave speed
+	double dt = 0.1;     // time quantum
+	double dd = 2.0;     // change in system
+	
+	using namespace std;
+	
+	int main(int argc, char *argv[]) {
+		// verify arguments
+		if (argc != 4) {
+			cerr << "usage: Wave2D size max_time interval" << endl;
+			return -1;
+		}
+		int size = atoi(argv[1]);
+		int max_time = atoi(argv[2]);
+		int interval = atoi(argv[3]);
+		
+		if (size < 100 || max_time < 3 || interval < 0) {
+			cerr << "usage: Wave2D size max_time interval" << endl;
+			cerr << "       where size >= 100 && time >= 3 && interval >= 0" << endl;
+			return -1;
+		}
+		
+		// create a simulation space
+		double z[3][size][size];
+		for (int p = 0; p < 3; p++)
+			for (int i = 0; i < size; i++)
+				for (int j = 0; j < size; j++)
+					z[p][i][j] = 0.0; // no wave
+		
+		// start a timer
+		Timer time;
+		time.start();
+		
+		// time = 0;
+		// initialize the simulation space: calculate z[0][][]
+		int weight = size / default_size;
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				if (i > 40 * weight && i < 60 * weight &&
+					j > 40 * weight && j < 60 * weight) {
+					z[0][i][j] = 20.0;
+				} else {
+					z[0][i][j] = 0.0;
+				}
+			}
+		}
+		
+		// time = 1
+		for (int i = 1; i < size - 1; i++) {
+			for (int j = 1; j < size - 1; j++) {
+				z[1][i][j] = z[0][i][j] + (pow(c, 2) / 2) * pow(dt / dd, 2) * (z[0][i + 1][j] + z[0][i - 1][j] + z[0][i][j + 1] + z[0][i][j - 1] - (4.0 * z[0][i][j]));
+			}
+		}
+		
+		// simulate wave diffusion from time = 2
+		for (int t = 2; t < max_time; t++) {
+			int time = t % 3;
+			for (int i = 1; i < size - 1; i++) {
+				for (int j = 1; j < size - 1; j++) {
+					int time_1, time_2;
+					//rotate z
+					if (time == 0) {
+						time_1 = 2;
+						time_2 = 1;
+					} else if (time == 1) {
+						time_1 = 0;
+						time_2 = 2;
+					} else {
+						time_1 = 1;
+						time_2 = 0;
+					}
+					//calculation
+					z[time][i][j] =
+					2.0 * z[time_1][i][j] - z[time_2][i][j] + (pow(c, 2) * pow(dt / dd, 2)	* (z[time_1][i + 1][j] + z[time_1][i - 1][j] + z[time_1][i][j + 1] +	z[time_1][i][j - 1] - (4.0 * z[time_1][i][j])));
+				}
+			}
+			//print out
+			if (interval != 0 && t % interval == 0) {
+				cout << t << endl;
+				for (int j = 0; j < size; j++) {
+					for (int i = 0; i < size; i++) {
+						cout << z[time][i][j] << " ";
+					}
+					cout << endl;
+				}
+				cout << endl;
+			}
+		} // end of simulation
+		
+		// finish the timer
+		cerr << "Elapsed time = " << time.lap() << endl;
+		return 0;
+	}
+	\end{lstlisting}
+	\pagebreak
+	
+	\subsection{Wave2D mpi.cpp}
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	
+	\end{lstlisting}
+	
+	
+	
+	\section {Execution output}
+	\subsection{Output analysis}
+	\begin{enumerate} 
+		\item The shortest trip in my program is equal to 447.638
+		\item The performance improvement with four threads in my program is equal to 50548672 / 23005048 = 2.2 times
+	\end{enumerate}
+	
+	\subsection{Execution output}
+	\noindent \large Check if output is correct
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	[wyxiao_css534@cssmpi1 prog2]$ ./Wave2D 576 500 50 > reS.txt
+	[wyxiao_css534@cssmpi1 prog2]$ mpirun -n 4 ./Wave2D_mpi 576 500 50 1 > reF.txt
+	[wyxiao_css534@cssmpi1 prog2]$ diff reF.txt reS.txt
+	[wyxiao_css534@cssmpi1 prog2]$
+	\end{lstlisting}
+	
+	\noindent \large Check output the performance improvement with four machines: 5721050 / 1575955 = 3.63 times
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	[wyxiao_css534@cssmpi1 prog2]$ ./Wave2D 576 500 0
+	Elapsed time = 5721050
+	[wyxiao_css534@cssmpi1 prog2]$ mpirun -n 4 ./Wave2D_mpi 576 500 0 1
+	Elapsed time = 1575955
+	\end{lstlisting}
+	
+	\noindent \large Check output the performance improvement with four machines with multithreading: 5721050 / 1575955 = 3.63 times
+	\vspace{-0.2in}
+	\begin{lstlisting}
+
+	\end{lstlisting}
+	
+	\section {Discussions}
+	In addition, I tried to improve the whole efficiency by replacing calculating distance with a cached matrix that contains all the 36 * 36 distance. This implementation decrease significant amount of time spent, although this made the program program with single thread runs faster than that with multi-thread. This also explained why select() with multi-thread could be slower than that with single thread. Starting a multi-thread could require some time to analysis the for-loop and distribute the tasks. Therefore, it is best to use multi-thread when the loop is large and require large computational power. \par To improve the performance of current program, just use the implementation I mentioned above to shorten the time required to calculate the distance. However, this only works with the current data set, it could be less efficient with larger data sets.
+	
+	\section {Lab Sessions 2}
+	Lab 2 we parallelize two programs that compute Pi using Monte Carlo methods and Integration. As the result shown, multi-thread decrease significant amount of time that required to finish the program. However, if the number of iterations is too small, the performance would decrease.
+	
+	\subsection{Source Code}
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	#include "mpi.h"
+	#include <stdlib.h> // atoi
+	#include <iostream> // cerr
+	#include "Timer.h"
+	
+	using namespace std;
+	
+	void init(double *matrix, int size, char op) {
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < size; j++)
+				matrix[i * size + j] = (op == '+') ? i + j : ((op == '-') ? i - j : 0);
+	}
+	
+	void print(double *matrix, int size, char id) {
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < size; j++)
+				cout << id << "[" << i << "][" << j << "] = " << matrix[i * size + j] << endl;
+	}
+	
+	void multiplication(double *a, double *b, double *c, int stripe, int size) {
+		for (int k = 0; k < size; k++)
+			for (int i = 0; i < stripe; i++)
+				for (int j = 0; j < size; j++)
+					// c[i][k] += a[i][j] * b[j][k];
+					c[i * size + k] += a[i * size + j] * b[j * size + k];
+	}
+	
+	int main(int argc, char *argv[]) {
+		int my_rank = 0;            // used by MPI
+		int mpi_size = 1;           // used by MPI
+		int size = 400;             // array size
+		bool print_option = false;  // print out c[] if it is true
+		Timer timer;
+		
+		// variables verification
+		if (argc == 3) {
+		if (argv[2][0] == 'y')
+			print_option = true;
+		}
+		
+		if (argc == 2 || argc == 3) {
+			size = atoi(argv[1]);
+		} else {
+			cerr << "usage:   matrix size [y|n]" << endl;
+			cerr << "example: matrix 400   y" << endl;
+			return -1;
+		}
+		
+		MPI_Init(&argc, &argv); // start MPI
+		MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+		MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+		
+		// matrix initialization
+		double *a = new double[size * size];
+		double *b = new double[size * size];
+		double *c = new double[size * size];
+		
+		if (my_rank == 0) { // master initializes all matrices
+			init(a, size, '+');
+			init(b, size, '-');
+			init(c, size, '0');
+			
+			// print initial values
+			if (false) {
+				print(a, size, 'a');
+				print(b, size, 'b');
+			}
+		
+			// start a timer
+			timer.start();
+		} else {                // slavs zero-initializes all matrices
+			init(a, size, '0');
+			init(b, size, '0');
+			init(c, size, '0');
+		}
+		
+		// broadcast the matrix size to all.
+		MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		
+		int stripe = size / mpi_size;     // partitioned stripe
+		
+		// master sends each partition of a[] to a different slave
+		// master also sends b[] to all slaves
+		if (my_rank == 0) {
+			for (int rank = 1; rank < mpi_size; ++rank) {
+				MPI_Send(a + rank * stripe * size, size * stripe, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+				MPI_Send(b, size * size, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+			}
+		} else {
+			MPI_Status status;
+			MPI_Recv(a, size * stripe, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
+			MPI_Recv(b, size * size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
+		}
+		
+		multiplication(a, b, c, stripe, size); // all ranks should compute multiplication
+		
+		// master receives each partition of c[] from a different slave
+		if (my_rank == 0) {
+			for (int rank = 1; rank < mpi_size; ++rank) {
+				MPI_Status status;
+				MPI_Recv(c + rank * stripe * size, size * stripe, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD,
+				&status);
+			}
+		} else {
+			MPI_Send(c, stripe * size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+		}
+		
+		if (my_rank == 0)
+			// stop the timer
+			cout << "elapsed time = " << timer.lap() << endl;
+		
+		// results
+		if (print_option && my_rank == 0)
+			print(c, size, 'c');
+		
+		MPI_Finalize(); // shut down MPI
+	}
+	\end{lstlisting}
+	
+	\subsection{Execution output}
+	
+	\noindent \large Check output is correct
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	[wyxiao_css534@cssmpi1 lab2]$ ./matrix 100 y > maxS.txt
+	[wyxiao_css534@cssmpi1 lab2]$ mpirun -n 4 ./matrix_mpi 100 y > maxM.txt
+	[wyxiao_css534@cssmpi1 lab2]$ diff maxS.txt maxM.txt
+	1c1
+	< elapsed time = 5185
+	---
+	> elapsed time = 7133
+	[wyxiao_css534@cssmpi1 lab2]$
+	\end{lstlisting}
+	
+	\noindent \large Check output the performance improvement: 774693 / 258639 = 2.9952 times
+	\vspace{-0.2in}
+	\begin{lstlisting}
+	[wyxiao_css534@cssmpi1 lab2]$ ./matrix 500
+	elapsed time = 774693
+	[wyxiao_css534@cssmpi1 lab2]$ mpirun -n 4 ./matrix_mpi 500
+	elapsed time = 258639
+	[wyxiao_css534@cssmpi1 lab2]$
+	\end{lstlisting}
+	
+	
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
