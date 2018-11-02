@@ -4,6 +4,7 @@
 #include <math.h>
 #include <mpi.h>
 #include <stdio.h>
+#include <omp.h>
 
 int default_size = 100;  // the default system size
 int defaultCellWidth = 8;
@@ -25,19 +26,20 @@ int main(int argc, char *argv[]) {
     int size = atoi(argv[1]);
     int max_time = atoi(argv[2]);
     int interval = atoi(argv[3]);
-    int nThread = atoi(argv[4]);
+    int nThreads = atoi(argv[4]);
     int mpi_size;
     
-    if (size < 100 || max_time < 3 || interval < 0 || nThread <= 0) {
+    if (size < 100 || max_time < 3 || interval < 0 || nThreads <= 0) {
         cerr << "usage: Wave2D size max_time interval" << endl;
         cerr << "       where size >= 100 && time >= 3 && interval >= 0 && mpi_size > 0" << endl;
         return -1;
     }
     
-    MPI_Init(&argc, &argv); // start MPI
+    // start MPI
+    MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    
+    // change # of threads
     omp_set_num_threads(nThreads);
     
     // create a simulation space
@@ -65,19 +67,8 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    //print every step include time = 0
-//    if (my_rank == 0 && interval == 1) {
-//        cout << "0" << endl;
-//        for (int j = 0; j < size; j++) {
-//            for (int i = 0; i < size; i++) {
-//                cout << z[0][i][j] << " ";
-//            }
-//            cout << endl;
-//        }
-//        cout << endl;
-//    }
-    
-    // time = 1
+    // time = 1, and parallelization
+#pragma omp parallel for
     for (int i = 1; i < size - 1; i++) {
         for (int j = 1; j < size - 1; j++) {
             z[1][i][j] = z[0][i][j] + (pow(c, 2) / 2) * pow(dt / dd, 2) * (z[0][i + 1][j] +
@@ -85,17 +76,6 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    //print every step include time = 1
-//    if (my_rank == 0 && interval == 1) {
-//        cout << 1 << endl;
-//        for (int j = 0; j < size; j++) {
-//            for (int i = 0; i < size; i++) {
-//                cout << z[1][i][j] << " ";
-//            }
-//            cout << endl;
-//        }
-//        cout << endl;
-//    }
     
     int stripe = size / mpi_size;     // partitioned stripe
     
@@ -108,7 +88,7 @@ int main(int argc, char *argv[]) {
             time_2 = 1;
         } else if (time == 1) {
             time_1 = 0;
-            time_2 = 2; // this
+            time_2 = 2;
         } else {
             time_1 = 1;
             time_2 = 0;
@@ -118,37 +98,30 @@ int main(int argc, char *argv[]) {
         if (my_rank == 0) {
             MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank +
                     1, 0, MPI_COMM_WORLD);
-//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             MPI_Status status;
             MPI_Recv(*(*(z + time_1) + stripe), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD,
                     &status);
-//            cout<< my_rank << ":"<< t <<"recv over"<<endl;
-            
         } else if (my_rank == mpi_size - 1) {
             MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank -
                     1, 0, MPI_COMM_WORLD);
-//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             MPI_Status status;
             MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0,
                     MPI_COMM_WORLD, &status);
-//            cout<< my_rank << ":"<< t <<"recv over"<<endl;
         } else {
             MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank - 1, 0,
                     MPI_COMM_WORLD);
-//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank + 1,
                     0, MPI_COMM_WORLD);
-//            cout<< my_rank << ":"<< t <<"send over"<<endl;
             
             MPI_Status status;
             MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0,
                     MPI_COMM_WORLD, &status);
-//            cout<< my_rank << ":"<< t<<"recv over"<<endl;
             MPI_Recv(*(*(z + time_1) + stripe * (my_rank + 1)), size, MPI_DOUBLE, my_rank + 1, 0,
                     MPI_COMM_WORLD, &status);
-//            cout<< my_rank << ":"<< t<<"recv over"<<endl;
         }
         
+        //Parallelization for the Schroedinger's formula
+#pragma omp parallel for
         for (int i = my_rank * stripe; i < (my_rank + 1) * stripe; i++) {
             if (i == 0 || i == size - 1) {
                 continue;
@@ -162,16 +135,16 @@ int main(int argc, char *argv[]) {
             }
         }
         
-        
+        //output if it's interval
         if (interval != 0 && t % interval == 0) {
+            //Aggregate all results from all ranks
             if (my_rank == 0) {
                 for (int rank = 1; rank < mpi_size; ++rank) {
                     MPI_Status status;
                     MPI_Recv(*(*(z + time) + rank * stripe), stripe * size, MPI_DOUBLE, rank, 0,
                             MPI_COMM_WORLD, &status);
-//                    cout<<"Aggregate:" << t <<endl;
                 }
-    
+                
                 cout << t << endl;
                 for (int j = 0; j < size; j++) {
                     for (int i = 0; i < size; i++) {
@@ -184,17 +157,16 @@ int main(int argc, char *argv[]) {
             } else {
                 MPI_Send(*(*(z + time) + my_rank * stripe), stripe * size, MPI_DOUBLE, 0, 0,
                         MPI_COMM_WORLD);
-//                cout<< my_rank << ", " <<  t << " send to 0"<<endl;
             }
-            
         }
-        
     } // end of simulation
     
     MPI_Finalize(); // shut down MPI
     
     // finish the timer
-    cerr << "Elapsed time = " << time.lap() << endl;
+    if (my_rank == 0) {
+        cerr << "Elapsed time = " << time.lap() << endl;
+    }
     
     return 0;
 }

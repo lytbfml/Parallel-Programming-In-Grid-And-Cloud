@@ -82,7 +82,7 @@
 
 \setlength{\parindent}{15pt}
 %opening
-\title{Program 1 Report}
+\title{\textbf{Program 2 Report}}
 \author{Yangxiao Wang}
 \date{ }
 
@@ -96,13 +96,8 @@
 	\pagebreak
 	
 	\section{Documentation}
-	In this project, we tried to solve Traveling salesman problem (TSP) with genetic algorithm. We are required to implement the core part of the algorithm: evaluation, crossover and mutation. Tsp problem often takes large amount of data and time. And to improve the efficiency, our approach is using OpenMP. My initial attempt is implement a greedy parallelization: parallelize the whole program from \textit{evaluate()} to \textit{populate()} with: \begin{lstlisting}
-	#pragma omp parallel for
-	\end{lstlisting}
-	however, after trying different things with the program, I realized that populate and mutate does not need to be parallelized. The time spent did increase not have much difference. And \textit{select()} with parallelization could spend more time than when running multi-thread. Therefore, the only functions I need to parallelize are \textit{crossover()} and \textit{evaluate()} which contain much larger loops. I simply added \begin{small}
-	\#pragma omp parallel for
-	\end{small} before the outer for loop inside \textit{crossover()} and \textit{evaluate()}. \par
-	
+	In this project, we tried to build a two-dimensional wave diffusion program by using Schroedinger's Wave Dissemination formula. Since the formula requires heavy computational power, we proposed to use parallelization techniques to implement it. And in this report, I would demonstrate the code and time required for each of the following implementations: sequential, MPI, and hybrid form of MPI and OpenMPI.	\par
+	The MPI methods I used is the two blocking communications \textit{MPI\_Send()} and \textit{MPI\_Recv()}. The advantage of using blocking communication is I do not need to handle the synchronization problem. The program can only continue to work until all communication is done (all data is sent and received). In addition, to exchange the boundary data, my approach was sending the boundary stripe at beginning of every loop of $t$ (time). And for implementation of OpenMPI, I simply parallelized the Schroedinger's formula part. For each ranks, it has multiple threads to compute the formula.
 	
 	
 	\section {Source code}
@@ -216,7 +211,170 @@
 	\subsection{Wave2D mpi.cpp}
 	\vspace{-0.2in}
 	\begin{lstlisting}
+	#include <iostream>
+	#include "Timer.h"
+	#include <stdlib.h>   // atoi
+	#include <math.h>
+	#include <mpi.h>
+	#include <stdio.h>
+	#include <omp.h>
 	
+	int default_size = 100;  // the default system size
+	int defaultCellWidth = 8;
+	double c = 1.0;      // wave speed
+	double dt = 0.1;     // time quantum
+	double dd = 2.0;     // change in system
+	
+	using namespace std;
+	
+	int main(int argc, char *argv[]) {
+		int my_rank = 0;            // used by MPI
+		// used by MPI
+		
+		// verify arguments
+		if (argc != 5) {
+			cerr << "usage: Wave2D size max_time interval n_thread" << endl;
+			return -1;
+		}
+		int size = atoi(argv[1]);
+		int max_time = atoi(argv[2]);
+		int interval = atoi(argv[3]);
+		int nThreads = atoi(argv[4]);
+		int mpi_size;
+		
+		if (size < 100 || max_time < 3 || interval < 0 || nThreads <= 0) {
+			cerr << "usage: Wave2D size max_time interval" << endl;
+			cerr << "where size >= 100 && time >= 3 && interval >= 0 && mpi_size > 0" << endl;
+			return -1;
+		}
+		
+		// start MPI
+		MPI_Init(&argc, &argv);
+		MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+		MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+		// change # of threads for openMP
+		omp_set_num_threads(nThreads);
+		
+		// create a simulation space
+		double z[3][size][size];
+		for (int p = 0; p < 3; p++)
+			for (int i = 0; i < size; i++)
+				for (int j = 0; j < size; j++)
+					z[p][i][j] = 0.0; // no wave
+		
+		// start a timer
+		Timer time;
+		time.start();
+		
+		// time = 0;
+		// initialize the simulation space: calculate z[0][][]
+		int weight = size / default_size;
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				if (i > 40 * weight && i < 60 * weight && j > 40 * weight && j < 60 * weight) {
+					z[0][i][j] = 20.0;
+				} else {
+					z[0][i][j] = 0.0;
+				}
+			}
+		}
+		
+		// time = 1, and parallelization
+		#pragma omp parallel for
+		for (int i = 1; i < size - 1; i++) {
+			for (int j = 1; j < size - 1; j++) {
+				z[1][i][j] = z[0][i][j] + (pow(c, 2) / 2) * pow(dt / dd, 2) * (z[0][i + 1][j] + z[0][i - 1][j] + z[0][i][j + 1] + z[0][i][j - 1] - (4.0 * z[0][i][j]));
+			}
+		}
+		
+		
+		int stripe = size / mpi_size;     // partitioned stripe
+		
+		// simulate wave diffusion from time = 2
+		for (int t = 2; t < max_time; t++) {
+			//rotate z
+			int time = t % 3;
+			int time_1, time_2;
+			if (time == 0) {
+				time_1 = 2;
+				time_2 = 1;
+			} else if (time == 1) {
+				time_1 = 0;
+				time_2 = 2;
+			} else {
+				time_1 = 1;
+				time_2 = 0;
+			}
+		
+			//exchange boundary data
+			if (my_rank == 0) {
+				MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
+				
+				MPI_Status status;
+				MPI_Recv(*(*(z + time_1) + stripe), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
+			} else if (my_rank == mpi_size - 1) {
+				MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank -		1, 0, MPI_COMM_WORLD);
+				
+				MPI_Status status;
+				MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
+			} else {
+				MPI_Send(*(*(z + time_1) + stripe * my_rank), size, MPI_DOUBLE, my_rank - 1, 0,	MPI_COMM_WORLD);
+				MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD);
+				
+				MPI_Status status;
+				MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0, MPI_COMM_WORLD, &status);
+				MPI_Recv(*(*(z + time_1) + stripe * (my_rank + 1)), size, MPI_DOUBLE, my_rank + 1, 0, MPI_COMM_WORLD, &status);
+			}
+			
+			//Parallelization for the Schroedinger's formula
+			#pragma omp parallel for
+			for (int i = my_rank * stripe; i < (my_rank + 1) * stripe; i++) {
+				if (i == 0 || i == size - 1) {
+					continue;
+				}
+				for (int j = 1; j < size - 1; j++) {
+				
+					z[time][i][j] =
+					2.0 * z[time_1][i][j] - z[time_2][i][j] + (pow(c, 2) * pow(dt / dd, 2)
+					* (z[time_1][i + 1][j] + z[time_1][i - 1][j] + z[time_1][i][j + 1] +
+					z[time_1][i][j - 1] - (4.0 * z[time_1][i][j])));
+				}
+			}
+				
+			//output if it's interval
+			if (interval != 0 && t % interval == 0) {
+				//Aggregate all results from all ranks
+				if (my_rank == 0) {
+					for (int rank = 1; rank < mpi_size; ++rank) {
+						MPI_Status status;
+						MPI_Recv(*(*(z + time) + rank * stripe), stripe * size, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD, &status);
+					}
+				
+					cout << t << endl;
+					for (int j = 0; j < size; j++) {
+						for (int i = 0; i < size; i++) {
+							cout << z[time][i][j] << " ";
+						}
+						cout << endl;
+					}
+					cout << endl;
+				
+				} else {
+					MPI_Send(*(*(z + time) + my_rank * stripe), stripe * size, MPI_DOUBLE, 0, 0,
+					MPI_COMM_WORLD);
+				}
+			}
+		} // end of simulation
+		
+		MPI_Finalize(); // shut down MPI
+		
+		// finish the timer
+		if(my_rank == 0) {
+			cerr << "Elapsed time = " << time.lap() << endl;
+		}
+		
+		return 0;
+	}
 	\end{lstlisting}
 	
 	
@@ -224,8 +382,8 @@
 	\section {Execution output}
 	\subsection{Output analysis}
 	\begin{enumerate} 
-		\item The shortest trip in my program is equal to 447.638
-		\item The performance improvement with four threads in my program is equal to 50548672 / 23005048 = 2.2 times
+		\item The performance improvement with four machines: 5721050 / 1575955 = 3.63 times
+		\item The performance improvement with four machines with multithreading: 5721050 / 874590 = 6.54 times
 	\end{enumerate}
 	
 	\subsection{Execution output}
@@ -233,7 +391,9 @@
 	\vspace{-0.2in}
 	\begin{lstlisting}
 	[wyxiao_css534@cssmpi1 prog2]$ ./Wave2D 576 500 50 > reS.txt
-	[wyxiao_css534@cssmpi1 prog2]$ mpirun -n 4 ./Wave2D_mpi 576 500 50 1 > reF.txt
+	Elapsed time = 7313114
+	[wyxiao_css534@cssmpi1 prog2]$ mpirun -n 4 ./Wave2D_mpi 576 500 50 4 > reF.txt
+	Elapsed time = 6991195
 	[wyxiao_css534@cssmpi1 prog2]$ diff reF.txt reS.txt
 	[wyxiao_css534@cssmpi1 prog2]$
 	\end{lstlisting}
@@ -247,17 +407,19 @@
 	Elapsed time = 1575955
 	\end{lstlisting}
 	
-	\noindent \large Check output the performance improvement with four machines with multithreading: 5721050 / 1575955 = 3.63 times
+	\noindent \large Check output the performance improvement with four machines with multithreading: 5721050 / 874590 = 6.54 times
 	\vspace{-0.2in}
 	\begin{lstlisting}
-
+	[wyxiao_css534@cssmpi1 prog2]$ mpirun -n 4 ./Wave2D_mpi 576 500 0 4
+	Elapsed time = 874590
 	\end{lstlisting}
 	
 	\section {Discussions}
-	In addition, I tried to improve the whole efficiency by replacing calculating distance with a cached matrix that contains all the 36 * 36 distance. This implementation decrease significant amount of time spent, although this made the program program with single thread runs faster than that with multi-thread. This also explained why select() with multi-thread could be slower than that with single thread. Starting a multi-thread could require some time to analysis the for-loop and distribute the tasks. Therefore, it is best to use multi-thread when the loop is large and require large computational power. \par To improve the performance of current program, just use the implementation I mentioned above to shorten the time required to calculate the distance. However, this only works with the current data set, it could be less efficient with larger data sets.
+	I noticed the cost of communication is not ideal, especially the aggregation of all ranks' data. Therefore I should keep the numbers of aggregation as low as possible, the aggregation only happens when the output is required.\par
+	To improve the current implementation, the best way I could think of is using unblocking communication (\textit{MPI\_Isend} and \textit{MPI\_Irecv}) when aggregation happens. Then the program would not stop when perform aggregation. And add a \textit{MPI\_Wait} statement before $t = t_{current}+3$ to make sure previous communication is finished when changing the values. Since the aggregation is the most time consuming part.
 	
 	\section {Lab Sessions 2}
-	Lab 2 we parallelize two programs that compute Pi using Monte Carlo methods and Integration. As the result shown, multi-thread decrease significant amount of time that required to finish the program. However, if the number of iterations is too small, the performance would decrease.
+	Lab 2 we parallelize a programs that compute the result of multiplication of matrix using sequential and MPI. As the result shown, four MPI ranks decrease significant amount of time that required to finish the program. However, if the size of matrix is too small, the performance would decrease as shown in the first execution output.
 	
 	\subsection{Source Code}
 	\vspace{-0.2in}
