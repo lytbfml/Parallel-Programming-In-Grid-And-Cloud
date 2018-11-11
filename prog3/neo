@@ -1,0 +1,23 @@
+HDLC	rfc2865.txt 5  1 rfc891.txt 10  1 rfc1122.txt 5  1 rfc907.txt 10  1 rfc2863.txt 15  1 rfc1662.txt 20  1
+LAN	rfc1123.txt 5  1 rfc1212.txt 25  1 rfc5321.txt 10  1 rfc1213.txt 25  1 rfc1724.txt 15  1 rfc2067.txt 85  1 rfc1155.txt 10  1 rfc1748.txt 30  1 rfc2613.txt 5  1 rfc1559.txt 15  1 rfc1044.txt 5  1 rfc4862.txt 5  1 rfc1661.txt 5  1 rfc2115.txt 10  1 rfc2427.txt 55  1 rfc1122.txt 50  1 rfc2895.txt 20  1 rfc1629.txt 15  1 rfc950.txt 60  1 rfc3461.txt 5  1 rfc1694.txt 35  1 rfc2348.txt 5  1 rfc1659.txt 25  1 rfc1658.txt 25  1 rfc1660.txt 25  1
+PPP	rfc4862.txt 5  1 rfc4861.txt 5  1 rfc2863.txt 60  1 rfc1990.txt 360  1 rfc1981.txt 5  1 rfc5531.txt 5  1 rfc1762.txt 95  1 rfc5036.txt 10  1 rfc2115.txt 5  1 rfc1662.txt 110  1 rfc1989.txt 130  1 rfc1659.txt 5  1 rfc4941.txt 10  1 rfc2460.txt 15  1 rfc1661.txt 200  1 rfc2427.txt 5  1 rfc5072.txt 305  1 rfc1994.txt 105  1 rfc2865.txt 80  1
+TCP	rfc1042.txt 15  1 rfc1191.txt 125  1 rfc1123.txt 205  1 rfc2460.txt 60  1 rfc1055.txt 15  1 rfc793.txt 1390  1 rfc5531.txt 15  1 rfc4271.txt 630  1 rfc2895.txt 15  1 rfc864.txt 25  1 rfc2289.txt 5  1 rfc1870.txt 5  1 rfc863.txt 15  1 rfc1035.txt 60  1 rfc907.txt 5  1 rfc922.txt 5  1 rfc1188.txt 10  1 rfc5065.txt 10  1 rfc865.txt 15  1 rfc1201.txt 10  1 rfc2920.txt 45  1 rfc1044.txt 10  1 rfc1356.txt 15  1 rfc5734.txt 210  1 rfc5322.txt 5  1 rfc959.txt 25  1 rfc1288.txt 10  1 rfc1034.txt 25  1 rfc5036.txt 290  1 rfc1002.txt 190  1 rfc867.txt 15  1 rfc2741.txt 40  1 rfc1658.txt 5  1 rfc1001.txt 615  1 rfc1122.txt 1105  1 rfc3551.txt 30  1 rfc3801.txt 15  1 rfc1213.txt 165  1 rfc5730.txt 5  1 rfc895.txt 10  1 rfc854.txt 50  1 rfc4941.txt 5  1 rfc1772.txt 25  1 rfc791.txt 60  1 rfc1939.txt 40  1 rfc1981.txt 90  1 rfc862.txt 15  1 rfc3550.txt 5  1 rfc4456.txt 5  1 rfc5321.txt 50  1 rfc1390.txt 10  1 rfc2132.txt 55  1 rfc3986.txt 10  1 rfc792.txt 15  1 rfc2865.txt 50  1 rfc919.txt 5  1 rfc5681.txt 415  1 rfc866.txt 15  1 rfc868.txt 5  1 rfc1006.txt 120  1 rfc3912.txt 15  1 rfc1155.txt 5  1 rfc1184.txt 10  1 rfc2355.txt 10  1 rfc1132.txt 10  1 rfc894.txt 10  1 rfc2067.txt 5  1 rfc4862.txt 35  1 rfc4861.txt 45  1 rfc6152.txt 5  1
+UDP	rfc4502.txt 25  1 rfc791.txt 10  1 rfc1213.txt 95  1 rfc4862.txt 10  1 rfc2460.txt 40  1 rfc3411.txt 10  1 rfc862.txt 15  1 rfc951.txt 55  1 rfc1542.txt 105  1 rfc5036.txt 50  1 rfc1002.txt 250  1 rfc2895.txt 15  1 rfc1122.txt 325  1 rfc1350.txt 15  1 rfc3550.txt 75  1 rfc863.txt 15  1 rfc2131.txt 25  1 rfc1001.txt 165  1 rfc1055.txt 5  1 rfc792.txt 15  1 rfc1034.txt 10  1 rfc865.txt 15  1 rfc2132.txt 5  1 rfc3417.txt 60  1 rfc866.txt 15  1 rfc1123.txt 125  1 rfc5531.txt 10  1 rfc868.txt 5  1 rfc768.txt 30  1 rfc867.txt 15  1 rfc2865.txt 120  1 rfc2453.txt 10  1 rfc2348.txt 5  1 rfc950.txt 5  1 rfc1981.txt 15  1 rfc3551.txt 20  1 rfc864.txt 20  1 rfc1191.txt 15  1 rfc1035.txt 65  1 rfc1629.txt 5  1
+
+
+
+hadoop fs -rmr /user/wyxiao_css534/output
+javac -classpath hadoop-0.20.2-core.jar InvertedIndexing.java
+jar -cvf inver.jar *.class
+hadoop jar inver.jar InvertedIndexing rfc output TCP UDP LAN PPP HDLC
+
+rm -r output
+hadoop fs -copyToLocal /user/wyxiao_css534/output .
+
+hadoop fs -mkdir /user/wyxiao_css534
+hadoop fs -chown wyxiao_css534:wyxiao_css534 /user/wyxiao_css534
+hadoop dfsadmin -setSpaceQuota 10g /user/wyxiao_css534
+hadoop fs -ls /user
+
+hadoop fs -mkdir /user/wyxiao_css534/rfc
+hadoop fs -copyFromLocal /home/wyxiao_css534/prog3/rfc/* /user/wyxiao_css534/rfc

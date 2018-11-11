@@ -16,7 +16,6 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
     int my_rank = 0;            // used by MPI
-    // used by MPI
     
     // verify arguments
     if (argc != 5) {
@@ -112,7 +111,7 @@ int main(int argc, char *argv[]) {
                     MPI_COMM_WORLD);
             MPI_Send(*(*(z + time_1) + stripe * (my_rank + 1) - 1), size, MPI_DOUBLE, my_rank + 1,
                     0, MPI_COMM_WORLD);
-            
+        
             MPI_Status status;
             MPI_Recv(*(*(z + time_1) + stripe * my_rank - 1), size, MPI_DOUBLE, my_rank - 1, 0,
                     MPI_COMM_WORLD, &status);
