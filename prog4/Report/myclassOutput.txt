@@ -1,0 +1,118 @@
+[wyxiao_css534@cssmpi1 spark_programs]$ spark-submit --class MyClass --master local MyClass.jar
+2018-11-21 20:14:02 WARN  NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+2018-11-21 20:14:02 INFO  SparkContext:54 - Running Spark version 2.3.1
+2018-11-21 20:14:02 INFO  SparkContext:54 - Submitted application: My Driver
+2018-11-21 20:14:02 INFO  SecurityManager:54 - Changing view acls to: wyxiao_css534
+2018-11-21 20:14:02 INFO  SecurityManager:54 - Changing modify acls to: wyxiao_css534
+2018-11-21 20:14:02 INFO  SecurityManager:54 - Changing view acls groups to:
+2018-11-21 20:14:02 INFO  SecurityManager:54 - Changing modify acls groups to:
+2018-11-21 20:14:02 INFO  SecurityManager:54 - SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(wyxiao_css534); groups with view permissions: Set(); users  with modify permissions: Set(wyxiao_css534); groups with modify permissions: Set()
+2018-11-21 20:14:03 INFO  Utils:54 - Successfully started service 'sparkDriver' on port 33246.
+2018-11-21 20:14:03 INFO  SparkEnv:54 - Registering MapOutputTracker
+2018-11-21 20:14:03 INFO  SparkEnv:54 - Registering BlockManagerMaster
+2018-11-21 20:14:03 INFO  BlockManagerMasterEndpoint:54 - Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+2018-11-21 20:14:03 INFO  BlockManagerMasterEndpoint:54 - BlockManagerMasterEndpoint up
+2018-11-21 20:14:03 INFO  DiskBlockManager:54 - Created local directory at /tmp/blockmgr-887fd971-00d2-43b5-afd9-ad8826788558
+2018-11-21 20:14:03 INFO  MemoryStore:54 - MemoryStore started with capacity 366.3 MB
+2018-11-21 20:14:03 INFO  SparkEnv:54 - Registering OutputCommitCoordinator
+2018-11-21 20:14:03 INFO  log:192 - Logging initialized @1672ms
+2018-11-21 20:14:03 INFO  Server:346 - jetty-9.3.z-SNAPSHOT
+2018-11-21 20:14:03 INFO  Server:414 - Started @1749ms
+2018-11-21 20:14:03 INFO  AbstractConnector:278 - Started ServerConnector@5dda6f9{HTTP/1.1,[http/1.1]}{0.0.0.0:4040}
+2018-11-21 20:14:03 INFO  Utils:54 - Successfully started service 'SparkUI' on port 4040.
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@6bc28a83{/jobs,null,AVAILABLE,@Spark}2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@384fc774{/jobs/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@e3cee7b{/jobs/job,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@6b9267b{/jobs/job/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@408b35bf{/stages,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@29ad44e3{/stages/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@15bcf458{/stages/stage,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@fac80{/stages/stage/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@726386ed{/stages/pool,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@649f2009{/stages/pool/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@14bb2297{/storage,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@69adf72c{/storage/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@797501a{/storage/rdd,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@1a15b789{/storage/rdd/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@57f791c6{/environment,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@51650883{/environment/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@6c4f9535{/executors,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@5bd1ceca{/executors/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@30c31dd7{/executors/threadDump,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@499b2a5c{/executors/threadDump/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@596df867{/static,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@3e587920{/,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@2ef8a8c3{/api,null,AVAILABLE,@Spark} 2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@7544a1e4{/jobs/job/kill,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@70e0accd{/stages/stage/kill,null,AVAILABLE,@Spark}
+2018-11-21 20:14:03 INFO  SparkUI:54 - Bound SparkUI to 0.0.0.0, and started at http://v0242p.host.s.uw.edu:4040
+2018-11-21 20:14:03 INFO  SparkContext:54 - Added JAR file:/home/wyxiao_css534/spark_programs/MyClass.jar at spark://v0242p.host.s.uw.edu:33246/jars/MyClass.jar with timestamp 1542860043497
+2018-11-21 20:14:03 INFO  Executor:54 - Starting executor ID driver on host localhost
+2018-11-21 20:14:03 INFO  Utils:54 - Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 41795.
+2018-11-21 20:14:03 INFO  NettyBlockTransferService:54 - Server created on v0242p.host.s.uw.edu:41795
+2018-11-21 20:14:03 INFO  BlockManager:54 - Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+2018-11-21 20:14:03 INFO  BlockManagerMaster:54 - Registering BlockManager BlockManagerId(driver, v0242p.host.s.uw.edu, 41795, None)
+2018-11-21 20:14:03 INFO  BlockManagerMasterEndpoint:54 - Registering block manager v0242p.host.s.uw.edu:41795 with 366.3 MB RAM, BlockManagerId(driver, v0242p.host.s.uw.edu, 41795, None)
+2018-11-21 20:14:03 INFO  BlockManagerMaster:54 - Registered BlockManager BlockManagerId(driver, v0242p.host.s.uw.edu, 41795, None)
+2018-11-21 20:14:03 INFO  BlockManager:54 - Initialized BlockManager: BlockManagerId(driver, v0242p.host.s.uw.edu, 41795, None)
+2018-11-21 20:14:03 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler@6ce90bc5{/metrics/json,null,AVAILABLE,@Spark}
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_0 stored as values in memory (estimated size 236.7 KB, free 366.1 MB)
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_0_piece0 stored as bytes in memory (estimated size 22.9 KB, free 366.0 MB)
+2018-11-21 20:14:04 INFO  BlockManagerInfo:54 - Added broadcast_0_piece0 in memory on v0242p.host.s.uw.edu:41795 (size: 22.9 KB, free: 366.3 MB)
+2018-11-21 20:14:04 INFO  SparkContext:54 - Created broadcast 0 from textFile at MyClass.java:20
+2018-11-21 20:14:04 INFO  FileInputFormat:249 - Total input paths to process : 1
+2018-11-21 20:14:04 INFO  SparkContext:54 - Starting job: count at MyClass.java:26
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Got job 0 (count at MyClass.java:26) with 1 output partitions
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Final stage: ResultStage 0 (count at MyClass.java:26)
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Parents of final stage: List()
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Missing parents: List()
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Submitting ResultStage 0 (MapPartitionsRDD[3] at flatMap at MyClass.java:26), which has no missing parents
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_1 stored as values in memory (estimated size 4.3 KB, free 366.0 MB)
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_1_piece0 stored as bytes in memory (estimated size 2.5 KB, free 366.0 MB)
+2018-11-21 20:14:04 INFO  BlockManagerInfo:54 - Added broadcast_1_piece0 in memory on v0242p.host.s.uw.edu:41795 (size: 2.5 KB, free: 366.3 MB)
+2018-11-21 20:14:04 INFO  SparkContext:54 - Created broadcast 1 from broadcast at DAGScheduler.scala:1039
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Submitting 1 missing tasks from ResultStage 0 (MapPartitionsRDD[3] at flatMap at MyClass.java:26) (first 15 tasks are for partitions Vector(0))
+2018-11-21 20:14:04 INFO  TaskSchedulerImpl:54 - Adding task set 0.0 with 1 tasks
+2018-11-21 20:14:04 INFO  TaskSetManager:54 - Starting task 0.0 in stage 0.0 (TID 0, localhost, executor driver, partition 0, PROCESS_LOCAL, 7897 bytes)
+2018-11-21 20:14:04 INFO  Executor:54 - Running task 0.0 in stage 0.0 (TID 0)
+2018-11-21 20:14:04 INFO  Executor:54 - Fetching spark://v0242p.host.s.uw.edu:33246/jars/MyClass.jar with timestamp 1542860043497
+2018-11-21 20:14:04 INFO  TransportClientFactory:267 - Successfully created connection to v0242p.host.s.uw.edu/172.28.203.196:33246 after 25 ms (0 ms spent in bootstraps)
+2018-11-21 20:14:04 INFO  Utils:54 - Fetching spark://v0242p.host.s.uw.edu:33246/jars/MyClass.jar to /tmp/spark-9f7bf541-b76b-4c3c-b7f3-a2e1e79d1f56/userFiles-0a84da4c-a028-481b-8821-9493efcb083e/fetchFileTemp1534358842930517119.tmp
+2018-11-21 20:14:04 INFO  Executor:54 - Adding file:/tmp/spark-9f7bf541-b76b-4c3c-b7f3-a2e1e79d1f56/userFiles-0a84da4c-a028-481b-8821-9493efcb083e/MyClass.jar to class loader
+2018-11-21 20:14:04 INFO  HadoopRDD:54 - Input split: file:/home/wyxiao_css534/spark_programs/sample.txt:0+66
+2018-11-21 20:14:04 INFO  Executor:54 - Finished task 0.0 in stage 0.0 (TID 0). 875 bytes result sent to driver
+2018-11-21 20:14:04 INFO  TaskSetManager:54 - Finished task 0.0 in stage 0.0 (TID 0) in 216 ms on localhost (executor driver) (1/1)
+2018-11-21 20:14:04 INFO  TaskSchedulerImpl:54 - Removed TaskSet 0.0, whose tasks have all completed, from pool
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - ResultStage 0 (count at MyClass.java:26) finished in 0.309 s
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Job 0 finished: count at MyClass.java:26, took 0.358323 s
+#words = 11
+2018-11-21 20:14:04 INFO  SparkContext:54 - Starting job: max at MyClass.java:27
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Got job 1 (max at MyClass.java:27) with 1 output partitions
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Final stage: ResultStage 1 (max at MyClass.java:27)
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Parents of final stage: List()
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Missing parents: List()
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Submitting ResultStage 1 (ParallelCollectionRDD[2] at parallelize at MyClass.java:22), which has no missing parents
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_2 stored as values in memory (estimated size 1864.0 B, free 366.0 MB)
+2018-11-21 20:14:04 INFO  MemoryStore:54 - Block broadcast_2_piece0 stored as bytes in memory (estimated size 1236.0 B, free 366.0 MB)
+2018-11-21 20:14:04 INFO  BlockManagerInfo:54 - Added broadcast_2_piece0 in memory on v0242p.host.s.uw.edu:41795 (size: 1236.0 B, free: 366.3 MB)
+2018-11-21 20:14:04 INFO  SparkContext:54 - Created broadcast 2 from broadcast at DAGScheduler.scala:1039
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Submitting 1 missing tasks from ResultStage 1 (ParallelCollectionRDD[2] at parallelize at MyClass.java:22) (first 15 tasks are for partitions Vector(0))
+2018-11-21 20:14:04 INFO  TaskSchedulerImpl:54 - Adding task set 1.0 with 1 tasks
+2018-11-21 20:14:04 INFO  TaskSetManager:54 - Starting task 0.0 in stage 1.0 (TID 1, localhost, executor driver, partition 0, PROCESS_LOCAL, 7910 bytes)
+2018-11-21 20:14:04 INFO  Executor:54 - Running task 0.0 in stage 1.0 (TID 1)
+2018-11-21 20:14:04 INFO  Executor:54 - Finished task 0.0 in stage 1.0 (TID 1). 824 bytes result sent to driver
+2018-11-21 20:14:04 INFO  TaskSetManager:54 - Finished task 0.0 in stage 1.0 (TID 1) in 16 ms on localhost (executor driver) (1/1)
+2018-11-21 20:14:04 INFO  TaskSchedulerImpl:54 - Removed TaskSet 1.0, whose tasks have all completed, from pool
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - ResultStage 1 (max at MyClass.java:27) finished in 0.025 s
+2018-11-21 20:14:04 INFO  DAGScheduler:54 - Job 1 finished: max at MyClass.java:27, took 0.028227 s
+max = 5
+2018-11-21 20:14:04 INFO  AbstractConnector:318 - Stopped Spark@5dda6f9{HTTP/1.1,[http/1.1]}{0.0.0.0:4040}
+2018-11-21 20:14:04 INFO  SparkUI:54 - Stopped Spark web UI at http://v0242p.host.s.uw.edu:4040
+2018-11-21 20:14:04 INFO  MapOutputTrackerMasterEndpoint:54 - MapOutputTrackerMasterEndpoint stopped!
+2018-11-21 20:14:04 INFO  MemoryStore:54 - MemoryStore cleared
+2018-11-21 20:14:04 INFO  BlockManager:54 - BlockManager stopped
+2018-11-21 20:14:04 INFO  BlockManagerMaster:54 - BlockManagerMaster stopped
+2018-11-21 20:14:04 INFO  OutputCommitCoordinator$OutputCommitCoordinatorEndpoint:54 - OutputCommitCoordinator stopped!
+2018-11-21 20:14:04 INFO  SparkContext:54 - Successfully stopped SparkContext
+2018-11-21 20:14:04 INFO  ShutdownHookManager:54 - Shutdown hook called
+2018-11-21 20:14:04 INFO  ShutdownHookManager:54 - Deleting directory /tmp/spark-94ef4c29-a6a1-4ff9-91da-613fdbe927e0
+2018-11-21 20:14:04 INFO  ShutdownHookManager:54 - Deleting directory /tmp/spark-9f7bf541-b76b-4c3c-b7f3-a2e1e79d1f56
+[wyxiao_css534@cssmpi1 spark_programs]$
