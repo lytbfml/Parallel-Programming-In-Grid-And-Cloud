@@ -1,0 +1,5 @@
+\contentsline {section}{\numberline {0.1}Introduction}{2}
+\contentsline {section}{\numberline {0.2}Parallelism Techniques}{2}
+\contentsline {section}{\numberline {0.3}Performance Analysis}{2}
+\contentsline {section}{\numberline {0.4}Programmability Analysis}{2}
+\contentsline {section}{\numberline {0.5}Execution Snapshots or Demo with Graphical Results}{2}

@@ -3,3 +3,27 @@ javac -classpath $HADOOP_CLASSPATH -d WordCount/ WordCount.java
 
 jar -cvf WordCount.jar -C WordCount .
 hadoop jar WordCount.jar WordCount input ~/outputC
+
+
+
+javac -classpath $HADOOP_CLASSPATH -d Main_Class/ Main.java
+jar -cvf main_Aco.jar -C Main_Class .
+hadoop jar main_Aco.jar Main input ~/outputC
+
+hadoop jar Main.jar Main input ~/outputC
+
+
+hadoop fs -mkdir -p /user/wyxiao_css534
+hadoop fs -chown wyxiao_css534:wyxiao_css534 /user/wyxiao_css534
+hadoop dfsadmin -setSpaceQuota 10g /user/wyxiao_css534
+hadoop fs -ls /user
+
+hadoop fs -mkdir /user/wyxiao_css534/input
+hadoop fs -copyFromLocal ~/aco/input/* /user/wyxiao_css534/input
+hadoop fs -copyToLocal /user/wyxiao_css534/output/* .
+
+
+scp cities.txt
+wyxiao_css534@cssmpi1.uwb.edu://home/wyxiao_css534/
+
+wyxiao_css534@cssmpi1.uwb.edu://home/wyxiao_css534/prog5/src/main/java/edu/uwb/css534
