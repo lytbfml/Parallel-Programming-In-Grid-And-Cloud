@@ -61,17 +61,29 @@
 	rulecolor = \color{black}, %% Sets frame color to avoid being affected by text color.
 }
 
-\setlength{\parindent}{15pt}
-%opening
-\title{\textbf{Final Report}}
-\author{En li, Yangde Li, Yangxiao Wang}
 
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
+
+\title{
+	%\vspace{-1in} 	
+	\usefont{OT1}{bch}{b}{n}
+	\normalfont \normalsize \textsc{School of STEM, Computing \& Software Systems, UWB } \\ [25pt]
+	\horrule{0.5pt} \\[0.4cm]
+	\huge CSS 534 Assignment 5 \\
+	\horrule{2pt} \\[0.5cm]
+}
+\author{
+	\normalfont 								\normalsize
+	En Li, Yangde Li, Yangxiao Wang\\[-3pt]		\normalsize
+	\today
+}
+\date{}
 
 
 \begin{document}
 	
 	\maketitle
-	
+	\pagebreak
 	\tableofcontents
 	\pagebreak
 	
@@ -138,13 +150,13 @@
 	
 	\section {Execution performance}
 	
-	\subsection{MpiJava}
-	For task parallelization, computing task is split into different nodes and the exchanged data is rather small so the performance improvement is obvious. However, the Data Decomposition duplicates the whole data set to run in every node, so the performance improvement should be little.
+	\subsection{MpiJava}	
+	For task parallelization, computing task is split into different nodes and the exchanged data is rather small so the cost in communication among nodes is rather small. The performance improvement is obvious. However, the Data Decomposition duplicates the whole data set to run in every nodes, so the performance improvement should be little but the output would be better than sequential version. The 2nd parallel pattern iterate n times data in the same time with the sequential version. Luckily, the Test results approve our speculation.
 	
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.7\linewidth]{running}
-		\caption{Execution Snapshots}
+		\caption{Execution Snapshots for MpiJava}
 		\label{fig:running}
 	\end{figure}
 	
@@ -168,52 +180,79 @@
 	\end{figure}
 	
 	\subsection{MASS}
-	We have finished the code for MASS, but we were not able to run it properly. We kept getting the following exception:
-	\begin{lstlisting} [format=Java, numbers=none]
-	Exception in thread "main" java.lang.NullPointerException
-	at edu.uw.bothell.css.dsl.MASS.AgentsBase.<init>(AgentsBase.java:123)
-	at edu.uw.bothell.css.dsl.MASS.Agents.<init>(Agents.java:63)
-	at edu.uwb.css534.ACO_Mass.main(ACO_Mass.java:37)
-	\end{lstlisting}
-	This is due to the creation of \textbf{Agent} object. We have tried different parameter and passed different \textbf{Places} object, none of them worked.
+	The parallel strategy of multi-agents is similar with ACO. MASS is based on multi-thread, and we mainly used Agent to present ants. The number of ants is small and most of the thread overhead comes from the number of iteration. As a result, the performance is nearly the same as the sequential version.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\textwidth]{massper}
+		\caption{Execution output for MASS}
+	\end{figure}
 	
 	\subsection{Overall Performance}
-	The following table compares results from each parallel technique with the same parameters and 1000 iterations
+	The following table compares results from each parallel technique with the same parameters and 1000 iterations.	The spark's performance results are not included the graph, because there are significant differences between spark's results and the others. 
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\textwidth]{perfo}
+		\caption{Performance Comparison with 4 ants}
+	\end{figure}
+
+	\noindent And we could not get stable results because other teams were using the same remote computer, however, the graph still shows that the elapsed time increased with the number of iterations. We can also observe that the performance of MapReduce is the highest compare to the other 3.
+
 	\begin{table}[H]
 		\centering
 		\begin{tabular}{|c|c|c|c|c|c|}
 			\hline 
-			- 				& Sequential 	& MpiJava 	& MapReduce & Spark 	& MASS \\
+			Iterations		& Sequential 	& MpiJava 	& MapReduce & Spark 	& MASS \\
 			\hline			
-			Best Length 	&738 			&  			& 598 		& 1692 		& - \\
+			100 			& 1.504 		& 2.030		& 9.047		& 109  		& 7.344 \\
 			\hline
-			Elapsed Time 	&47.468			& 	 		& 33.25		& 1140 		& - \\
+			200 			& 3.740			& 2.637	 	& 30.397 	& 210  		& 18.904 \\
 			\hline
-			\begin{tabular}[c]{@{}l@{}}Performance\\   Improvement\end{tabular}
-							&1	 			& 			& 1.43		& 0.04		& - \\
-					
+			300 			& 6.715			& 5.330 	& 26.909	& 355		& 10.288 \\
+			\hline
+			400 			& 8.517			& 4.673		& 84.700	& 409		& 26.329 \\
+			\hline
+			500 			& 9.461			& 6.946		& 97.053	& 510		& 17.706 \\
+			\hline
+			600 			& 18.144		& 10.716	& 127.428 	& 599		& 18.961 \\
+			\hline
+			700 			& 32.685		& 10.275	& 102.772	& 830		& 41.059 \\
+			\hline
+			800 			& 40.459		& 17.673 	& 117.578	& 989  		& 21.622 \\
+			\hline
+			900 			& 38.326		& 21.474 	& 58.927 	& 1020 		& 33.032 \\
+			\hline
+			1000			& 45.287 		& 17.019 	& 66.191	& 1140		& 47.465 \\
+			\hline
+			Best Route		& 638.1			& 911.37 	&  602.93	& 1692 		& 777.65 \\
 			\hline
 		\end{tabular}
-		\caption{Performance Comparison}
+		\caption{Performance Comparison with 4 ants}
 	\end{table}
 	
+	We took 4 spatial scalability and used MpiJava. From the graph, we can observe that the ACO's scalability is not ideal. This is caused by the algorithm we used. With more computation nodes, the ants are still runs in the same graph. We also observed the same results on other platform.
 	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\textwidth]{sana}
+		\caption{Spatial analysis}
+	\end{figure}
 	
 	\section {Programmability analysis}
 	
 	
 	\subsection{MpiJava}
-	
+	As for the programmability, MPI keeps a low invasion in original code. The MPI context code is only several numbers of line. However, the MPI API is relatively complicated. The communication API like send/recv contains a long parameter list and this kind of programming style is unfriendly to new developers. The users have to look up the api docs for the function calls they want to invoke, and the whole program is split by many rank branches which leads to a unreadable code base.
 	
 	\subsection{MapReduce}
-	With MapRedour implementation of ACO is straightforward, every mapper runs its own ACO and report a best result at the end of all iteration. Thanks to the framework, only Mapper and Reducer class need to be implemented, the amount of boilerplate is minimal compare to other method.
+	With MapRedour, the implementation of ACO is straightforward, every mapper runs its own ACO and report a best result at the end of all iteration. Thanks to the framework, only Mapper and Reducer class need to be implemented, the amount of boilerplate is minimal compare to other method.
 	
 	\subsection{Spark}
 	
 	Our specific implementation of the ACO may not be the best fit to be run on Spark. In general, one main advantage of Spark is the amount of boiler code can be fairly small due to the advantage of using Lamda expression. But in this program, I actually had to write more lines of code than the sequential version. The extra boilerplate code comes mainly from the work to rebroadcast Pheromone. I wrote code to broadcast it, collect distances from all ants, and then rebroadcast it after updating the Pheromone. This is because in Spark, we cannot update global data structures inside of RDD. We can read them after broadcasting it. To change a shared data structure across different nodes. I had to collect data needed to update the Pheromone in every iteration before updating it, and then rebroadcast. 
 	
 	\subsection{MASS}
-	There is a \textbf{ACO} class in our implementation of the ACO. This class contains all ACO algorithm such as updating pheromone or move ants. To convert it to MASS, simply extend it to \textbf{Agent} and override \textit{callMethod} function. And make some adjustments to fit the MASS api. Therefore, there is only a little amount of boilerplate code and minor changes compare to our base sequential version. 
+	There is a \textbf{ACO} class in our implementation of the ACO. This class contains all ACO algorithm such as updating pheromone or move ants. To convert it to MASS, simply extend it to \textbf{Agent} and override \textit{callMethod} function. And make some adjustments to fit the MASS api. Therefore, there is not a large amount of boilerplate code and minor changes compare to our base sequential version. 
 	
 	\subsection{Overall Programmability}
 	
@@ -224,12 +263,14 @@
 			- 				& Sequential 	& MpiJava 	& MapReduce & Spark 	& MASS \\
 			\hline
 			\begin{tabular}[c]{@{}l@{}}Proximate \\ boilerplate ratio\end{tabular}
-							& 0	 			& 0.4		& 0.1		& 0.5		& 0.3 \\
+							& 0	 			& 0.2		& 0.2		& 0.5		& 0.3 \\
 			
 			\hline
 		\end{tabular}
 		\caption{Proximate boilerplate ratio}
 	\end{table}
+	
+	
 	
 	\section {Lab 5}
 	
@@ -238,11 +279,15 @@
 		\includegraphics[width=0.7\textwidth]{lab1}
 		\caption{Execution output for lab5 run sample}
 	\end{figure}
-
+	\newpage
 	\begin{lstlisting} [format=Java]
 	package edu.uwb.css534;
 	
 	import edu.uw.bothell.css.dsl.MASS.*; // Library for Multi-Agent Spatial Simulation
+	import edu.uw.bothell.css.dsl.MASS.logging.LogLevel;
+	import edu.uw.bothell.css.dsl.MASS.Agents;
+	import edu.uw.bothell.css.dsl.MASS.MASS;
+	import edu.uw.bothell.css.dsl.MASS.Places;
 	import java.util.*;
 	import java.io.*;
 	import java.lang.reflect.Array;
@@ -251,18 +296,37 @@
 	public class lab5 {
 	
 	private static final String NODE_FILE = "nodes.xml";
+	
+	
 	public static void main(String[] args) throws Exception {
+	
+	
 	MASS.setNodeFilePath(NODE_FILE);
 	MASS.setLoggingLevel(LogLevel.DEBUG);
 	MASS.init();
-	Places matrix = new Place( 1, "Matrix", null, 10, 10);
-	Agents worker = new Agents( 2, "Worker", null, matrix, 2);
+	
+	Places matrix = new Places( 1, Matrix.class.getName(), null, 10, 10);
+	Agents worker = new Agents( 2, Worker.class.getName(), null, matrix, 2);
+	
 	worker.callAll( Worker.goElsewhere_ );
 	worker.manageAll( );
+	
 	MASS.finish();
 	}
+	
 	}
 	
+	
+	public class Matrix extends Place {
+	public Matrix() { }
+	public Matrix(Object obj) { }
+	public Object callMethod(int method, Object o) {
+	switch (method) {
+	default:
+	return new String("Unknown Method Number: " + method);
+	}
+	}
+	}
 	
 	public class Worker extends Agent {
 	
@@ -271,19 +335,16 @@
 	public Worker() {
 	super();
 	}
-	
 	public Worker(Object object) {
 	super();
 	}
-	
 	public Object callMethod(int funcId) {
 	switch (funcId) {
 	case goElsewhere_:
-	return goElsewhere(args);
+	return goElsewhere();
 	}
 	return null;
 	}
-	
 	public Object goElsewhere() {
 	int newX = 0; // a new destination's X-coordinate
 	int newY = 0; // a new destination's Y-coordinate
@@ -314,21 +375,8 @@
 	return null;
 	}
 	}
-
-	
-	
-	public class Matrix extends Place {
-	public Matrix() { }
-	public Matrix(Object obj) { }
-	public Object callMethod(int method, Object o) {
-	switch (method) {
-	default:
-	return new String("Unknown Method Number: " + method);
-	}
-	}
-	}
 	\end{lstlisting}
-	
+	\newpage
 	\begin{thebibliography}{9}
 		
 		\bibitem{amo}

@@ -7,24 +7,19 @@ public class Worker extends Agent {
 	
 	public static final int goElsewhere_ = 0;
 	
-	
 	public Worker() {
 		super();
 	}
-	
 	public Worker(Object object) {
 		super();
 	}
-	
 	public Object callMethod(int funcId) {
 		switch (funcId) {
 			case goElsewhere_:
-				return goElsewhere(args);
+				return goElsewhere();
 		}
 		return null;
 	}
-	
-	
 	public Object goElsewhere() {
 		int newX = 0; // a new destination's X-coordinate
 		int newY = 0; // a new destination's Y-coordinate
